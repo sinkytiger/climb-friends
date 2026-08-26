@@ -15,3 +15,6 @@ spike/events_dump.json
 *.key
 *.key.pub
 *.pem
+
+# 백업 파일
+backups/
