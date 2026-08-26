@@ -7,7 +7,12 @@ chmod +x /opt/climbfriends/deploy/backup_db.sh
 
 CRON_LINE="0 4 * * * /opt/climbfriends/deploy/backup_db.sh >> /opt/climbfriends/backups/backup.log 2>&1"
 mkdir -p /opt/climbfriends/backups
-( crontab -l 2>/dev/null | grep -v 'backup_db.sh' ; echo "$CRON_LINE" ) | crontab -
+
+TMP=$(mktemp)
+crontab -l 2>/dev/null | grep -v 'backup_db.sh' > "$TMP" || true
+echo "$CRON_LINE" >> "$TMP"
+crontab "$TMP"
+rm -f "$TMP"
 
 echo "=== 설치된 크론 ==="
 crontab -l
