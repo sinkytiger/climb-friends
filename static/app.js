@@ -3,6 +3,7 @@ let calY, calM;
 const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
 const ADMIN_URL_PARAM = new URLSearchParams(location.search).has("admin") || location.hash === "#admin";
 const isAdminUI = IS_LOCAL || ADMIN_URL_PARAM;
+console.log("[init] host=", location.hostname, "search=", location.search, "isAdminUI=", isAdminUI);
 let adminKey = localStorage.getItem("cfAdminKey") || "";
 let editingEventId = null;
 let currentDetailId = null;
