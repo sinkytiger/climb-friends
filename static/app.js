@@ -72,6 +72,8 @@ function switchTab(name) {
 async function refreshMembers() {
   const data = await api("/api/members");
   BOOT.members = data.members;
+  renderBirthdayAdminCard();
+  await loadMonth();
 }
 
 function openModal(id) { document.getElementById(id).classList.add("open"); }
@@ -101,10 +103,12 @@ function renderCalendar(events) {
     `<div class="dow ${i === 0 ? "sun" : i === 6 ? "sat" : ""}">${d}</div>`).join("");
   for (let i = 0; i < startDow; i++) html += '<div class="day empty"></div>';
   for (let d = 1; d <= days; d++) {
+    const bdays = BOOT.members.filter(m => m.birth_date && m.birth_date.slice(5) === `${pad(calM)}-${pad(d)}`);
+    const bdayChips = bdays.map(m => `<span class="chip chip-bday">🎂 ${esc(m.name)}</span>`).join("");
     const chips = (byDay[d] || []).map(e =>
       `<button class="chip ${chainCls(e.chain_name)}" onclick="openDetail(${e.id})">${esc(e.start_time)} ${esc(e.title || e.gym_name)}</button>`
     ).join("");
-    html += `<div class="day ${d === todayD ? "today" : ""}"><div class="num">${d}</div>${chips}</div>`;
+    html += `<div class="day ${d === todayD ? "today" : ""}"><div class="num">${d}</div>${chips}${bdayChips}</div>`;
   }
   grid.innerHTML = html;
 }
@@ -490,6 +494,32 @@ function calcAge(birthDate) {
   return age >= 0 && age < 150 ? age : "";
 }
 
+function renderBirthdayAdminCard() {
+  const card = document.getElementById("birthday-admin-card");
+  if (!card) return;
+  const now = new Date();
+  const mm = pad(now.getMonth() + 1);
+  const dd = pad(now.getDate());
+  const todayKey = `${mm}-${dd}`;
+  const todayList = BOOT.members.filter(m => m.birth_date && m.birth_date.slice(5) === todayKey);
+  const monthList = BOOT.members.filter(m => m.birth_date && m.birth_date.slice(5, 7) === mm)
+    .sort((a, b) => a.birth_date.slice(8, 10).localeCompare(b.birth_date.slice(8, 10)));
+  const fmt = m => {
+    const age = calcAge(m.birth_date);
+    return `${esc(m.name)} (${esc(m.birth_date.slice(5))}${age !== "" ? `, ${age}세` : ""})`;
+  };
+  if (!monthList.length) { card.style.display = "none"; return; }
+  card.style.display = "";
+  const todayHtml = todayList.length
+    ? `<div style="margin-bottom:8px">🎂 <b>오늘 생일</b>: ${todayList.map(fmt).join(", ")}</div>`
+    : `<div style="margin-bottom:8px">🎂 <b>오늘 생일</b>: 없음</div>`;
+  const monthHtml = `<div>📅 <b>${Number(mm)}월 생일</b>: ${monthList.map(m => {
+    const isToday = m.birth_date.slice(5) === todayKey;
+    return isToday ? `<b>${fmt(m)}</b>` : fmt(m);
+  }).join(", ")}</div>`;
+  card.innerHTML = `<div class="bday-card">${todayHtml}${monthHtml}</div>`;
+}
+
 function renderMemberList() {
   const el = document.getElementById("member-list");
   el.innerHTML = BOOT.members.map(m => {
@@ -849,6 +879,7 @@ async function init() {
   fillEventFormSelects();
   setupMemberSearch();
   buildFoodControls();
+  renderBirthdayAdminCard();
   renderSettingCard();
   await loadBanner();
 

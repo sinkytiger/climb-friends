@@ -235,6 +235,9 @@ table.event-table .btn-mini.del:hover { background: #fef2f2; }
 .search-item.empty { color: #9ca3af; cursor: default; }
 .search-item:hover.empty { background: #fff; }
 
+.chip-bday { background: #fce7f3 !important; color: #be185d !important; border: 1px solid #fbcfe8; }
+.bday-card b { color: #be185d; }
+
 #member-list {
   max-height: 360px;
   overflow-y: auto;
