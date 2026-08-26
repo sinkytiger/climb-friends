@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 from typing import Optional
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -446,9 +446,17 @@ def rank_grades(chain_id: int, period: str = "all"):
     return {"grades": grades, "rows": out}
 
 
+INDEX_FILE = BASE_DIR / "static" / "index.html"
+
+
 @app.get("/")
 def root():
-    return RedirectResponse("/static/index.html")
+    return FileResponse(INDEX_FILE)
+
+
+@app.get("/admin")
+def admin_page():
+    return FileResponse(INDEX_FILE)
 
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
