@@ -528,6 +528,54 @@ function pickMember(id, el) {
   document.getElementById("cf-member-results").style.display = "none";
 }
 
+/* ---------- 배너 ---------- */
+async function loadBanner() {
+  try {
+    const data = await api("/api/banner");
+    const dismissed = localStorage.getItem("bannerDismissed");
+    if (data.enabled && data.text && dismissed !== data.text) {
+      document.getElementById("banner-text").textContent = data.text;
+      document.getElementById("global-banner").style.display = "flex";
+    } else {
+      document.getElementById("global-banner").style.display = "none";
+    }
+    const inp = document.getElementById("banner-text-input");
+    const chk = document.getElementById("banner-enabled");
+    if (inp && data.text != null) inp.value = data.text;
+    if (chk) chk.checked = !!data.enabled;
+  } catch (e) {}
+}
+
+function dismissBanner() {
+  const text = document.getElementById("banner-text").textContent;
+  localStorage.setItem("bannerDismissed", text);
+  document.getElementById("global-banner").style.display = "none";
+}
+
+async function saveBanner() {
+  const text = document.getElementById("banner-text-input").value.trim();
+  const enabled = document.getElementById("banner-enabled").checked;
+  if (enabled && !text) { alert("문구를 입력하세요"); return; }
+  try {
+    await adminApi("/api/banner", { method: "PUT", body: JSON.stringify({ text, enabled }) });
+    if (enabled) localStorage.removeItem("bannerDismissed");
+    alert("배너가 저장되었습니다");
+    await loadBanner();
+  } catch (e) { alert(e.message); }
+}
+
+function previewBanner() {
+  const text = document.getElementById("banner-text-input").value.trim();
+  if (!text) { alert("문구를 입력하세요"); return; }
+  document.getElementById("banner-text").textContent = text;
+  document.getElementById("global-banner").style.display = "flex";
+}
+
+function clearBanner() {
+  document.getElementById("banner-text-input").value = "";
+  document.getElementById("banner-enabled").checked = false;
+}
+
 /* ---------- 세팅 일정 ---------- */
 const SETTING_SCHEDULE = {
   "월": [
@@ -766,6 +814,7 @@ async function init() {
   setupMemberSearch();
   buildFoodControls();
   renderSettingCard();
+  await loadBanner();
 
   await loadMonth();
   await loadRankings();

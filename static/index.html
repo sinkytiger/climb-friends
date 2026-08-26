@@ -6,7 +6,7 @@
 <title>클라임 프렌즈 대시보드</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="/static/style.css?v=20260827d">
+<link rel="stylesheet" href="/static/style.css?v=20260827e">
 </head>
 <body>
 
@@ -27,6 +27,11 @@
     <span class="admin-chip admin-only">관리자 모드</span>
   </div>
 </header>
+
+<div id="global-banner" class="banner" style="display:none">
+  <span id="banner-text"></span>
+  <button class="banner-close" onclick="dismissBanner()" title="닫기">&#10005;</button>
+</div>
 
 <main>
   <section id="tab-calendar" class="tab active">
@@ -189,6 +194,22 @@
       <h3>최근 클리어 기록 <small>최대 8건</small></h3>
       <table class="event-table" id="recent-clears-body"></table>
     </div>
+
+    <div class="card">
+      <h3>상단 배너 <small>장난 문구 띄우기</small></h3>
+      <div class="form-row">
+        <label>문구</label>
+        <input type="text" id="banner-text-input" placeholder="예: 오늘 완등 못하면 회비 두 배! 😜" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;">
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;margin-bottom:12px">
+        <input type="checkbox" id="banner-enabled"> 표시하기
+      </label>
+      <div style="display:flex;gap:8px">
+        <button class="btn-primary" onclick="saveBanner()" style="flex:1">저장</button>
+        <button class="btn-mini" onclick="previewBanner()" style="flex:1">미리보기</button>
+        <button class="btn-mini del" onclick="clearBanner()">끄기</button>
+      </div>
+    </div>
   </section>
 </main>
 
@@ -260,6 +281,6 @@
   <button data-tab="admin" class="admin-only">관리</button>
 </nav>
 
-<script src="/static/app.js?v=20260827d"></script>
+<script src="/static/app.js?v=20260827e"></script>
 </body>
 </html>

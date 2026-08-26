@@ -55,6 +55,10 @@ CREATE TABLE IF NOT EXISTS clear_logs (
     log_date TEXT NOT NULL,
     count INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
 """
 
 DEMO_MEMBERS = ["김철수", "박민수", "이지은", "정우진", "최유진"]

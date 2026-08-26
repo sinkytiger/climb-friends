@@ -6,6 +6,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+import json
 
 from app.db import BASE_DIR, get_conn, init_db
 
@@ -59,6 +60,11 @@ class MemberIn(BaseModel):
 class GymIn(BaseModel):
     chain_id: int
     name: str
+
+
+class BannerIn(BaseModel):
+    text: str = ""
+    enabled: bool = False
 
 
 class ClearIn(BaseModel):
@@ -389,6 +395,27 @@ def recent_clears(limit: int = 10):
         (limit,),
     ).fetchall()
     return {"logs": [dict(r) for r in rows]}
+
+
+@app.get("/api/banner")
+def get_banner():
+    conn = get_conn()
+    row = conn.execute("SELECT value FROM settings WHERE key='banner'").fetchone()
+    if not row:
+        return {"text": "", "enabled": False}
+    return json.loads(row["value"])
+
+
+@app.put("/api/banner", dependencies=[Depends(check_admin)])
+def set_banner(body: BannerIn):
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO settings(key, value) VALUES ('banner', ?)"
+        " ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+        (json.dumps({"text": body.text, "enabled": body.enabled}, ensure_ascii=False),),
+    )
+    conn.commit()
+    return {"ok": True}
 
 
 def _period_params(period: str):

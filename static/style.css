@@ -235,6 +235,25 @@ table.event-table .btn-mini.del:hover { background: #fef2f2; }
 .search-item.empty { color: #9ca3af; cursor: default; }
 .search-item:hover.empty { background: #fff; }
 
+.banner {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px;
+  background: linear-gradient(90deg, #fff7ed 0%, #fef3c7 50%, #fff7ed 100%);
+  border-bottom: 2px dashed #f59e0b;
+  color: #92400e;
+  font-size: 14px; font-weight: bold;
+  padding: 10px 40px 10px 20px;
+  position: relative;
+  text-align: center;
+  line-height: 1.5;
+}
+.banner-close {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  border: none; background: transparent; font-size: 16px;
+  cursor: pointer; color: #b45309; padding: 4px 8px; border-radius: 6px;
+}
+.banner-close:hover { background: #fde68a; }
+
 footer {
   text-align: center;
   padding: 20px 0 10px;
