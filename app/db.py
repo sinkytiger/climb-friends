@@ -157,6 +157,27 @@ def init_db():
         if not conn.execute("SELECT 1 FROM chains WHERE name='기타'").fetchone():
             conn.execute("INSERT INTO chains(name) VALUES ('기타')")
             conn.commit()
+        for chain in json.loads(GYMS_JSON.read_text(encoding="utf-8"))["chains"]:
+            row = conn.execute("SELECT id FROM chains WHERE name=?", (chain["name"],)).fetchone()
+            if not row:
+                cur = conn.execute("INSERT INTO chains(name) VALUES (?)", (chain["name"],))
+                chain_id = cur.lastrowid
+                for level, grade_name in enumerate(chain.get("grades", []), start=1):
+                    conn.execute("INSERT INTO grades(chain_id, level, name) VALUES (?, ?, ?)", (chain_id, level, grade_name))
+                for gym_name in chain.get("gyms", []):
+                    conn.execute("INSERT INTO gyms(chain_id, name) VALUES (?, ?)", (chain_id, gym_name))
+                conn.commit()
+            else:
+                chain_id = row["id"]
+                existing_grades = conn.execute("SELECT COUNT(*) AS n FROM grades WHERE chain_id=?", (chain_id,)).fetchone()["n"]
+                if existing_grades == 0 and chain.get("grades"):
+                    for level, grade_name in enumerate(chain.get("grades", []), start=1):
+                        conn.execute("INSERT INTO grades(chain_id, level, name) VALUES (?, ?, ?)", (chain_id, level, grade_name))
+                    conn.commit()
+                for gym_name in chain.get("gyms", []):
+                    if not conn.execute("SELECT 1 FROM gyms WHERE chain_id=? AND name=?", (chain_id, gym_name)).fetchone():
+                        conn.execute("INSERT INTO gyms(chain_id, name) VALUES (?, ?)", (chain_id, gym_name))
+                conn.commit()
         cols_r = [r["name"] for r in conn.execute("PRAGMA table_info(restaurants)")]
         if "link" not in cols_r:
             pass
