@@ -30,6 +30,10 @@ fi
 
 echo "[5/6] 방화벽 오픈 (8000 포트)"
 sudo ufw allow 8000/tcp || true
+sudo iptables -I INPUT -p tcp --dport 8000 -j ACCEPT
+if command -v netfilter-persistent >/dev/null 2>&1; then
+  sudo netfilter-persistent save || true
+fi
 
 echo "[6/6] 상시 실행 서비스 등록"
 sudo tee /etc/systemd/system/climbdash.service > /dev/null <<EOF
