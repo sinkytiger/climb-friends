@@ -756,7 +756,7 @@ const GYM_LOC = {
   "기타|기타": [37.5665, 126.9780]
 };
 
-const RESTAURANTS = [
+let RESTAURANTS = [
   { chain: "알레", gym: "혜화점", name: "히메카츠", cat: "일식 돈카츠", memo: "", lat: 37.5717418, lng: 126.9977031, link: "https://naver.me/5pwZm2Yq" },
   { chain: "알레", gym: "혜화점", name: "고봉당 혜화대학로본점", cat: "등갈비", memo: "등갈비는 보통, 인절미구이가 댑악", lat: 37.5829392, lng: 127.0001425, link: "https://naver.me/GV2tYj49" },
   { chain: "알레", gym: "혜화점", name: "온혜화", cat: "밀크티", memo: "테이크아웃만 가능", lat: 37.5826171, lng: 127.0030740, link: "https://naver.me/FHlgzdUx" },
@@ -774,6 +774,88 @@ const RESTAURANTS = [
   { chain: "손상원", gym: "을지로점", name: "한성양꼬치 종각점", cat: "양꼬치", memo: "", lat: 37.5695618, lng: 126.9843029, link: "https://naver.me/Gq84BTBp" },
   { chain: "서울숲", gym: "구로점", name: "아건 구디역점", cat: "인도 커리", memo: "", lat: 37.4836067, lng: 126.9009031, link: "https://naver.me/GG7tBjQw" }
 ];
+
+async function loadRestaurants() {
+  try {
+    const data = await api("/api/restaurants");
+    if (data.restaurants && data.restaurants.length) {
+      RESTAURANTS = data.restaurants.map(r => ({
+        id: r.id,
+        chain: r.chain_name,
+        gym: r.gym_name,
+        gym_id: r.gym_id,
+        name: r.name,
+        cat: r.category,
+        memo: r.memo,
+        lat: r.lat,
+        lng: r.lng,
+        link: r.link
+      }));
+    }
+  } catch (e) {}
+  renderRestaurantAdminList();
+}
+
+function renderRestaurantAdminList() {
+  const el = document.getElementById("restaurant-admin-list");
+  if (!el) return;
+  if (!RESTAURANTS.length) {
+    el.innerHTML = '<li><span class="empty-note">등록된 맛집이 없습니다</span></li>';
+    return;
+  }
+  el.innerHTML = RESTAURANTS.map(r => `
+    <li style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px 2px;border-bottom:1px solid #f9fafb;font-size:13px;">
+      <span>${esc(r.chain)} ${esc(r.gym)} · <b>${esc(r.name)}</b> <span class="empty-note">(${esc(r.cat)})</span></span>
+      <button class="btn-mini del" onclick="deleteRestaurant(${r.id})">삭제</button>
+    </li>`).join("");
+}
+
+async function addRestaurant() {
+  const chainIdx = Number(document.getElementById("rest-chain").value);
+  const gymId = Number(document.getElementById("rest-gym").value);
+  const link = document.getElementById("rest-link").value.trim();
+  const name = document.getElementById("rest-name").value.trim();
+  const cat = document.getElementById("rest-cat").value.trim();
+  const memo = document.getElementById("rest-memo").value.trim();
+  if (!gymId) { alert("체인과 지점을 선택하세요"); return; }
+  if (!link && !name) { alert("네이버 링크 또는 가게 이름을 입력하세요"); return; }
+  try {
+    await adminApi("/api/restaurants", {
+      method: "POST",
+      body: JSON.stringify({ gym_id: gymId, name: name || null, category: cat || null, memo: memo || null, link: link || null, naver_url: link || null })
+    });
+    document.getElementById("rest-link").value = "";
+    document.getElementById("rest-name").value = "";
+    document.getElementById("rest-cat").value = "";
+    document.getElementById("rest-memo").value = "";
+    await loadRestaurants();
+    showGym();
+    alert("맛집이 등록되었습니다");
+  } catch (e) { alert(e.message); }
+}
+
+async function deleteRestaurant(id) {
+  if (!confirm("이 맛집을 삭제할까요?")) return;
+  try {
+    await adminApi(`/api/restaurants/${id}`, { method: "DELETE" });
+    await loadRestaurants();
+    showGym();
+  } catch (e) { alert(e.message); }
+}
+
+function setupRestaurantForm() {
+  const chainSel = document.getElementById("rest-chain");
+  const gymSel = document.getElementById("rest-gym");
+  if (!chainSel || !gymSel) return;
+  chainSel.innerHTML = BOOT.chains.map((c, i) => `<option value="${i}">${esc(c.name)}</option>`).join("");
+  const update = () => {
+    const idx = Number(chainSel.value);
+    const gyms = BOOT.chains[idx] ? BOOT.chains[idx].gyms : [];
+    gymSel.innerHTML = gyms.map(g => `<option value="${g.id}">${esc(g.name)}</option>`).join("");
+  };
+  chainSel.addEventListener("change", update);
+  update();
+}
 
 let foodMap = null;
 let gymMarker = null;
@@ -914,9 +996,11 @@ async function init() {
   calY = now.getFullYear();
   calM = now.getMonth() + 1;
 
+  await loadRestaurants();
   renderChainChips();
   fillEventFormSelects();
   setupMemberSearch();
+  setupRestaurantForm();
   buildFoodControls();
   renderBirthdayAdminCard();
   renderSettingCard();

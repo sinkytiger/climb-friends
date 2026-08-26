@@ -6,7 +6,7 @@
 <title>클라임 프렌즈 대시보드</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="/static/style.css?v=20260827k">
+<link rel="stylesheet" href="/static/style.css?v=20260827m">
 </head>
 <body>
 
@@ -203,6 +203,40 @@
     </div>
 
     <div class="card">
+      <h3>맛집 추가 <small>네이버 링크 붙이면 자동 등록</small></h3>
+      <div class="form-cols">
+        <div class="form-row">
+          <label>체인</label>
+          <select id="rest-chain" class="gym-select"></select>
+        </div>
+        <div class="form-row">
+          <label>지점</label>
+          <select id="rest-gym" class="gym-select"></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>네이버 지도 링크 <small style="color:#9ca3af;font-weight:normal">(예: https://naver.me/...)</small></label>
+        <input type="text" id="rest-link" placeholder="https://naver.me/..." style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;">
+      </div>
+      <div class="form-cols">
+        <div class="form-row">
+          <label>가게 이름 <small style="color:#9ca3af;font-weight:normal">(비우면 자동 추출)</small></label>
+          <input type="text" id="rest-name" placeholder="자동 추출" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;">
+        </div>
+        <div class="form-row">
+          <label>카테고리</label>
+          <input type="text" id="rest-cat" placeholder="한식, 일식 등" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>메모</label>
+        <input type="text" id="rest-memo" placeholder="예: 인절미구이가 맛있음" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;">
+      </div>
+      <button class="btn-primary" style="width:100%" onclick="addRestaurant()">맛집 등록</button>
+      <ol id="restaurant-admin-list" style="list-style:none; margin-top:12px; max-height:260px; overflow-y:auto; border:1px solid #e5e7eb; border-radius:8px; padding:4px 8px;"></ol>
+    </div>
+
+    <div class="card">
       <h3>상단 배너 <small>장난 문구 띄우기</small></h3>
       <div class="form-row">
         <label>문구</label>
@@ -309,6 +343,6 @@
   <button data-tab="admin" class="admin-only">관리</button>
 </nav>
 
-<script src="/static/app.js?v=20260827k"></script>
+<script src="/static/app.js?v=20260827m"></script>
 </body>
 </html>

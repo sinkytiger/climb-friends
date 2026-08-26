@@ -7,6 +7,10 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import json
+import re
+import time
+import urllib.parse
+import urllib.request
 
 from app.db import BASE_DIR, get_conn, init_db
 
@@ -71,6 +75,17 @@ class GymIn(BaseModel):
 class BannerIn(BaseModel):
     text: str = ""
     enabled: bool = False
+
+
+class RestaurantIn(BaseModel):
+    gym_id: int
+    name: Optional[str] = None
+    category: Optional[str] = None
+    memo: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    link: Optional[str] = None
+    naver_url: Optional[str] = None
 
 
 class ClearIn(BaseModel):
@@ -304,6 +319,139 @@ def add_gym(body: GymIn):
     )
     conn.commit()
     return {"id": cur.lastrowid}
+
+
+def _geocode_address(addr: str):
+    if not addr or len(addr.strip()) < 4:
+        return None
+    q = urllib.parse.quote(addr.strip())
+    url = f"https://nominatim.openstreetmap.org/search?q={q}&format=jsonv2&limit=1&countrycodes=kr"
+    req = urllib.request.Request(url, headers={"User-Agent": "climbfriends-dashboard", "Accept-Language": "ko"})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            arr = json.loads(resp.read().decode("utf-8"))
+            if arr:
+                return float(arr[0]["lat"]), float(arr[0]["lon"])
+    except Exception:
+        pass
+    return None
+
+
+def _extract_naver_place(naver_url: str):
+    name = None
+    addr = None
+    if not naver_url:
+        return name, addr, None, None
+    raw = naver_url.strip()
+    place_id = None
+    try:
+        if "naver.me" in raw:
+            req0 = urllib.request.Request(raw, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req0, timeout=10) as r0:
+                final = r0.geturl()
+                m = re.search(r"/place/(\d+)", final)
+                if m:
+                    place_id = m.group(1)
+                else:
+                    m2 = re.search(r"pinId=(\d+)", final)
+                    if m2:
+                        place_id = m2.group(1)
+        else:
+            m = re.search(r"/place/(\d+)", raw)
+            if m:
+                place_id = m.group(1)
+    except Exception:
+        pass
+    if not place_id and re.match(r"^\d+$", raw):
+        place_id = raw
+    if not place_id:
+        return name, addr, None, None
+    headers = {"User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15"}
+    for path in (f"https://m.place.naver.com/restaurant/{place_id}/home", f"https://m.place.naver.com/place/{place_id}/home"):
+        try:
+            req = urllib.request.Request(path, headers=headers)
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                html = resp.read().decode("utf-8", errors="ignore")
+                m = re.search(r'og:title"\s+content="([^"]+)"', html)
+                if m:
+                    name = m.group(1).replace(" : 네이버", "").strip()
+                m2 = re.search(r'"roadAddress"\s*:\s*"([^"]{5,80})"', html)
+                if m2:
+                    addr = m2.group(1)
+                else:
+                    m3 = re.search(r'"jibunAddress"\s*:\s*"([^"]{5,80})"', html)
+                    if m3:
+                        addr = m3.group(1)
+                if name or addr:
+                    break
+        except Exception:
+            continue
+        time.sleep(0.3)
+    lat = lng = None
+    if addr:
+        coords = _geocode_address(addr)
+        if coords:
+            lat, lng = coords
+    link = f"https://naver.me/{place_id}" if place_id and "naver.me" not in raw else raw
+    if place_id and link == raw and raw.isdigit():
+        link = f"https://m.place.naver.com/restaurant/{place_id}/home"
+    return name, addr, lat, lng
+
+
+@app.get("/api/restaurants")
+def list_restaurants():
+    conn = get_conn()
+    rows = conn.execute(
+        """
+        SELECT r.id, r.gym_id, r.name, r.category, r.memo, r.lat, r.lng, r.link,
+               g.name AS gym_name, c.name AS chain_name
+        FROM restaurants r
+        JOIN gyms g ON g.id = r.gym_id
+        JOIN chains c ON c.id = g.chain_id
+        ORDER BY c.name, g.name, r.name
+        """
+    ).fetchall()
+    return {"restaurants": [dict(r) for r in rows]}
+
+
+@app.post("/api/restaurants", dependencies=[Depends(check_admin)])
+def add_restaurant(body: RestaurantIn):
+    conn = get_conn()
+    if not conn.execute("SELECT 1 FROM gyms WHERE id=?", (body.gym_id,)).fetchone():
+        raise HTTPException(status_code=400, detail="암장이 올바르지 않습니다")
+    name = (body.name or "").strip()
+    category = (body.category or "").strip()
+    memo = (body.memo or "").strip()
+    lat = body.lat
+    lng = body.lng
+    link = (body.link or "").strip()
+    naver_url = (body.naver_url or "").strip()
+    if naver_url:
+        ename, eaddr, elat, elng = _extract_naver_place(naver_url)
+        if ename and not name:
+            name = ename
+        if elat is not None and lat is None:
+            lat, lng = elat, elng
+        if naver_url and not link:
+            link = naver_url
+    if not name:
+        raise HTTPException(status_code=400, detail="가게 이름을 입력하거나 네이버 링크를 넣어주세요")
+    if lat is None or lng is None:
+        raise HTTPException(status_code=400, detail="좌표를 찾을 수 없습니다. 주소를 확인하거나 네이버 링크를 정확히 넣어주세요")
+    cur = conn.execute(
+        "INSERT INTO restaurants(gym_id, name, category, memo, lat, lng, link) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (body.gym_id, name, category, memo, lat, lng, link),
+    )
+    conn.commit()
+    return {"id": cur.lastrowid}
+
+
+@app.delete("/api/restaurants/{restaurant_id}", dependencies=[Depends(check_admin)])
+def delete_restaurant(restaurant_id: int):
+    conn = get_conn()
+    conn.execute("DELETE FROM restaurants WHERE id=?", (restaurant_id,))
+    conn.commit()
+    return {"ok": True}
 
 
 @app.get("/api/members")
