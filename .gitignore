@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.env
+
+# 데이터베이스 (서버마다 따로 생성됨)
+data/dashboard.db
+
+# 스파이크 테스트의 비밀/토큰 파일
+spike/.env
+spike/tokens.json
+spike/calendars_dump.json
+spike/events_dump.json

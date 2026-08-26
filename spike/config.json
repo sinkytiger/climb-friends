@@ -1,0 +1,4 @@
+{
+  "rest_api_key": "여기에_REST_API키를_입력하세요",
+  "redirect_uri": "http://localhost:8080/oauth"
+}

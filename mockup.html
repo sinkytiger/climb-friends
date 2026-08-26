@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>클라임 프렌즈 대시보드 (목업)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+  background: #fff;
+  color: #1f2937;
+  padding-bottom: 70px;
+}
+header {
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.logo-img { height: 44px; width: auto; }
+.logo-fallback {
+  display: none; align-items: center; gap: 4px;
+  font-size: 18px; font-weight: bold; letter-spacing: 0.5px; color: #111827;
+}
+.logo-fallback .dot { color: #ea580c; }
+.brand .title { font-size: 16px; font-weight: bold; color: #111827; }
+nav.tabs { display: flex; gap: 4px; margin-left: 12px; }
+nav.tabs button {
+  background: transparent; border: none; color: #6b7280;
+  font-size: 15px; padding: 9px 16px; border-radius: 8px; cursor: pointer;
+}
+nav.tabs button:hover { background: #f3f4f6; }
+nav.tabs button.active { background: #fff7ed; color: #ea580c; font-weight: bold; }
+.user { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 13px; color: #374151; }
+.admin-chip {
+  background: #111827; color: #fff; font-size: 11px; font-weight: bold;
+  padding: 4px 10px; border-radius: 20px; display: inline-block;
+}
+
+main { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+.tab { display: none; }
+.tab.active { display: block; }
+
+.cal-layout { display: grid; grid-template-columns: 1fr 280px; gap: 20px; align-items: start; }
+.cal-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.cal-head h2 { font-size: 20px; }
+.nav-btn {
+  border: 1px solid #e5e7eb; background: #fff; border-radius: 8px;
+  width: 34px; height: 34px; cursor: pointer; font-size: 14px;
+}
+.nav-btn:hover { background: #f9fafb; }
+.cal-head .spacer { flex: 1; }
+.btn-primary {
+  background: #ea580c; color: #fff; border: none; border-radius: 8px;
+  padding: 10px 18px; font-size: 14px; font-weight: bold; cursor: pointer;
+}
+.btn-primary:hover { background: #c2410c; }
+.admin-only-tag { font-size: 11px; color: #9ca3af; }
+
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.dow { text-align: center; font-size: 12px; color: #6b7280; padding: 6px 0; font-weight: bold; }
+.dow.sun { color: #dc2626; } .dow.sat { color: #2563eb; }
+.day {
+  background: #fff; border-radius: 10px; min-height: 92px;
+  padding: 6px; border: 1px solid #e5e7eb;
+}
+.day.empty { border: none; }
+.day .num { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+.day.today { border: 2px solid #ea580c; background: #fff7ed; }
+.day.today .num { color: #ea580c; font-weight: bold; }
+.chip {
+  display: block; width: 100%; text-align: left; border: none; cursor: pointer;
+  font-size: 11px; padding: 3px 6px; border-radius: 6px; margin-bottom: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff;
+}
+.c-climb { background: #ea580c; }
+.c-seoul { background: #059669; }
+.c-park { background: #2563eb; }
+.c-onflick { background: #4f46e5; }
+.c-son { background: #e11d48; }
+.c-alle { background: #0d9488; }
+.c-focus { background: #7c3aed; }
+.c-etc { background: #6b7280; }
+.c-dam { background: #0891b2; }
+.c-cracker { background: #db2777; }
+
+.side-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.side-card h3 { font-size: 14px; margin-bottom: 10px; }
+.side-card h3 small { color: #9ca3af; font-weight: normal; }
+.side-card ol { list-style: none; }
+.side-card li { display: flex; align-items: center; gap: 8px; padding: 7px 0; font-size: 13px; border-bottom: 1px solid #f9fafb; }
+.side-card li:last-child { border-bottom: none; }
+.rank-num {
+  width: 24px; height: 24px; border-radius: 50%; background: #f3f4f6; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: bold; color: #6b7280;
+}
+.rank-num.r1 { background: #fef3c7; color: #b45309; }
+.rank-num.r2 { background: #e5e7eb; color: #374151; }
+.rank-num.r3 { background: #ffedd5; color: #c2410c; }
+.side-card li .name { flex: 1; }
+.side-card li .val { font-weight: bold; color: #ea580c; }
+
+.rank-filters { display: flex; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
+.seg { display: inline-flex; background: #f3f4f6; border-radius: 8px; padding: 3px; }
+.seg button {
+  border: none; background: transparent; padding: 7px 14px;
+  border-radius: 6px; font-size: 13px; cursor: pointer; color: #4b5563;
+}
+.seg button.active { background: #fff; font-weight: bold; color: #111827; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.filter-label { font-size: 12px; color: #6b7280; }
+
+.chain-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.chipbtn {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid #e5e7eb; background: #fff; border-radius: 20px;
+  padding: 7px 14px; font-size: 13px; cursor: pointer; color: #4b5563;
+}
+.chipbtn:hover { background: #f9fafb; }
+.chipbtn.active { background: #111827; color: #fff; border-color: #111827; }
+.gdot {
+  display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  border: 1px solid #d1d5db; flex-shrink: 0;
+}
+.chipbtn .gdot { width: 8px; height: 8px; }
+
+.rank-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+.card h3 { font-size: 15px; margin-bottom: 12px; }
+.card h3 small { color: #9ca3af; font-weight: normal; margin-left: 6px; }
+.card ol { list-style: none; }
+.card li { display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px solid #f9fafb; font-size: 14px; }
+.card li:last-child { border-bottom: none; }
+.card li .name { flex: 1; }
+.card li .val { font-weight: bold; color: #ea580c; }
+.card li .sub { font-size: 11px; color: #9ca3af; }
+
+table.grade-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.grade-table th {
+  text-align: center; padding: 9px 6px; background: #f9fafb;
+  border-bottom: 2px solid #e5e7eb; font-size: 12px; color: #4b5563; white-space: nowrap;
+}
+table.grade-table th:first-child, table.grade-table td:first-child { text-align: left; }
+table.grade-table td { padding: 10px 6px; text-align: center; border-bottom: 1px solid #f3f4f6; white-space: nowrap; }
+table.grade-table tr:last-child td { border-bottom: none; }
+table.grade-table .g-total { font-weight: bold; color: #ea580c; }
+table.grade-table .g-name { display: flex; align-items: center; gap: 8px; }
+table.grade-table .g-sub { font-size: 11px; color: #9ca3af; }
+.grade-table-wrap { overflow-x: auto; }
+
+.food-layout { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
+#map { height: 500px; border: 1px solid #e5e7eb; border-radius: 12px; z-index: 1; }
+.food-list { display: flex; flex-direction: column; gap: 8px; max-height: 500px; overflow-y: auto; }
+.food-item { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 14px; cursor: pointer; }
+.food-item:hover { border-color: #ea580c; }
+.food-item .f-name { font-weight: bold; font-size: 14px; }
+.food-item .f-cat {
+  font-size: 11px; color: #fff; background: #059669;
+  border-radius: 12px; padding: 2px 8px; margin-left: 6px; font-weight: normal;
+}
+.food-item .f-memo { font-size: 12px; color: #6b7280; margin-top: 4px; }
+.gym-select {
+  padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px;
+  font-size: 13px; background: #fff; font-family: inherit;
+}
+
+.admin-notice {
+  background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412;
+  border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 16px;
+}
+table.event-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.event-table th {
+  text-align: left; padding: 10px 8px; background: #f9fafb;
+  border-bottom: 2px solid #e5e7eb; font-size: 12px; color: #4b5563;
+}
+table.event-table td { padding: 11px 8px; border-bottom: 1px solid #f3f4f6; }
+table.event-table .btn-mini {
+  border: 1px solid #e5e7eb; background: #fff; border-radius: 6px;
+  padding: 5px 10px; font-size: 12px; cursor: pointer; margin-right: 4px;
+}
+table.event-table .btn-mini:hover { background: #f9fafb; }
+table.event-table .btn-mini.del { color: #dc2626; }
+table.event-table .btn-mini.del:hover { background: #fef2f2; }
+.badge {
+  display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 20px;
+  color: #fff; margin-right: 6px;
+}
+
+.modal-backdrop {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  z-index: 50; align-items: center; justify-content: center; padding: 16px;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: #fff; border-radius: 14px; padding: 22px;
+  width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto;
+}
+.modal h3 { font-size: 18px; margin-bottom: 4px; }
+.modal .meta { font-size: 13px; color: #6b7280; margin-bottom: 14px; line-height: 1.7; }
+.attendees { margin: 12px 0 16px; }
+.attendees h4 { font-size: 13px; color: #6b7280; margin-bottom: 8px; }
+.attendee { display: flex; align-items: center; gap: 8px; font-size: 14px; padding: 5px 0; }
+.avatar {
+  width: 28px; height: 28px; border-radius: 50%; background: #ffedd5;
+  color: #c2410c; font-size: 12px; font-weight: bold;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+.btn { flex: 1; padding: 11px; border-radius: 8px; border: none; font-size: 14px; font-weight: bold; cursor: pointer; }
+.btn-join { background: #ea580c; color: #fff; }
+.btn-out { background: #f3f4f6; color: #374151; }
+.btn-close { background: transparent; color: #6b7280; margin-top: 8px; width: 100%; border: none; cursor: pointer; font-size: 13px; }
+
+.form-row { margin-bottom: 12px; }
+.form-row label { display: block; font-size: 13px; color: #374151; margin-bottom: 5px; font-weight: bold; }
+.form-row input, .form-row select, .form-row textarea {
+  width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;
+  font-size: 14px; font-family: inherit; background: #fff;
+}
+.form-cols { display: flex; gap: 8px; }
+.form-cols .form-row { flex: 1; }
+
+.mobile-tabs { display: none; }
+
+@media (max-width: 860px) {
+  nav.tabs { display: none; }
+  .cal-layout { grid-template-columns: 1fr; }
+  .rank-cards { grid-template-columns: 1fr; }
+  .day { min-height: 64px; }
+  .day .num { font-size: 10px; }
+  .chip { font-size: 9px; padding: 2px 4px; }
+  .brand .title { display: none; }
+  .mobile-tabs {
+    display: flex; position: fixed; bottom: 0; left: 0; right: 0;
+    background: #fff; border-top: 1px solid #e5e7eb; z-index: 20;
+  }
+  .mobile-tabs button {
+    flex: 1; border: none; background: transparent; padding: 14px 0;
+    font-size: 14px; color: #6b7280; cursor: pointer;
+  }
+  .mobile-tabs button.active { color: #ea580c; font-weight: bold; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <img src="logo.png" alt="클라임 프렌즈" class="logo-img"
+         onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex';">
+    <div class="logo-fallback" id="logo-fallback">CLIMB FRIENDS<span class="dot">.</span></div>
+    <div class="title">클라임 프렌즈 일정 대시보드</div>
+  </div>
+  <nav class="tabs">
+    <button data-tab="calendar" class="active">달력</button>
+    <button data-tab="ranking">랭킹</button>
+    <button data-tab="food">맛집</button>
+    <button data-tab="admin">관리</button>
+  </nav>
+  <div class="user"><span class="admin-chip">관리자</span> 클라임 프렌즈 방장님</div>
+</header>
+
+<main>
+  <section id="tab-calendar" class="tab active">
+    <div class="cal-layout">
+      <div>
+        <div class="cal-head">
+          <button class="nav-btn">&#9664;</button>
+          <h2>2026년 8월</h2>
+          <button class="nav-btn">&#9654;</button>
+          <div class="spacer"></div>
+          <button class="btn-primary" onclick="switchTab('admin')">+ 일정 등록</button>
+          <span class="admin-only-tag">관리자 전용</span>
+        </div>
+        <div class="cal-grid" id="calendar"></div>
+      </div>
+      <aside>
+        <div class="side-card">
+          <h3>일정 참여 랭킹 <small>이번 달</small></h3>
+          <ol>
+            <li><span class="rank-num r1">1</span><span class="name">이지은</span><span class="val">12회</span></li>
+            <li><span class="rank-num r2">2</span><span class="name">김철수</span><span class="val">11회</span></li>
+            <li><span class="rank-num r3">3</span><span class="name">한도윤</span><span class="val">9회</span></li>
+            <li><span class="rank-num">4</span><span class="name">최유진</span><span class="val">8회</span></li>
+            <li><span class="rank-num">5</span><span class="name">박민수</span><span class="val">6회</span></li>
+          </ol>
+        </div>
+        <div class="side-card">
+          <h3>다가오는 일정 <small>최근 3건</small></h3>
+          <ol>
+            <li><span class="rank-num">D-1</span><span class="name">더클라임 문래점</span><span class="val" style="font-size:11px">8/26</span></li>
+            <li><span class="rank-num">D-4</span><span class="name">서울숲 영등포점</span><span class="val" style="font-size:11px">8/29</span></li>
+            <li><span class="rank-num">D-8</span><span class="name">더클라임 신촌점</span><span class="val" style="font-size:11px">9/2</span></li>
+          </ol>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section id="tab-ranking" class="tab">
+    <div class="rank-filters">
+      <span class="filter-label">기간</span>
+      <div class="seg">
+        <button class="active">분기</button><button>전체</button>
+      </div>
+    </div>
+    <div class="rank-cards">
+      <div class="card" style="margin-bottom:0">
+        <h3>문제 클리어 랭킹 <small>지점 합산</small></h3>
+        <ol>
+          <li><span class="rank-num r1">1</span><span class="name">김철수</span><span class="val">142개</span></li>
+          <li><span class="rank-num r2">2</span><span class="name">박민수</span><span class="val">118개</span></li>
+          <li><span class="rank-num r3">3</span><span class="name">이지은</span><span class="val">97개</span></li>
+          <li><span class="rank-num">4</span><span class="name">정우진</span><span class="val">76개</span></li>
+          <li><span class="rank-num">5</span><span class="name">최유진</span><span class="val">61개</span></li>
+        </ol>
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <h3>일정 참여 랭킹 <small>RSVP 기준</small></h3>
+        <ol>
+          <li><span class="rank-num r1">1</span><span class="name">이지은</span><span class="val">12회</span></li>
+          <li><span class="rank-num r2">2</span><span class="name">김철수</span><span class="val">11회</span></li>
+          <li><span class="rank-num r3">3</span><span class="name">한도윤</span><span class="val">9회</span></li>
+          <li><span class="rank-num">4</span><span class="name">최유진</span><span class="val">8회</span></li>
+          <li><span class="rank-num">5</span><span class="name">박민수</span><span class="val">6회</span></li>
+        </ol>
+      </div>
+    </div>
+    <div class="card">
+      <h3>그레이드별 클리어 랭킹 <small>체인을 선택하세요</small></h3>
+      <div class="chain-chips" id="chain-chips"></div>
+      <div class="grade-table-wrap">
+        <div id="grade-table-area"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-admin" class="tab">
+    <div class="admin-notice">
+      일정 등록/수정/삭제는 관리자(방장)만 할 수 있습니다. 멤버는 달력 보기와 참가 신청만 가능해요.
+    </div>
+    <div class="cal-head">
+      <h2 style="font-size:18px">일정 관리</h2>
+      <div class="spacer"></div>
+      <button class="btn-primary" onclick="openModal('modal-new')">+ 새 일정 등록</button>
+    </div>
+    <div class="card" style="padding:0">
+      <table class="event-table">
+        <tr><th>날짜</th><th>시간</th><th>체인/지점</th><th>참가자</th><th>관리</th></tr>
+        <tr>
+          <td>8/26 (수)</td><td>19:00</td><td><span class="badge c-climb">더클라임</span> 문래점</td>
+          <td>4명</td>
+          <td><button class="btn-mini">수정</button><button class="btn-mini del">삭제</button></td>
+        </tr>
+        <tr>
+          <td>8/29 (토)</td><td>10:00</td><td><span class="badge c-seoul">서울숲</span> 영등포점</td>
+          <td>2명</td>
+          <td><button class="btn-mini">수정</button><button class="btn-mini del">삭제</button></td>
+        </tr>
+        <tr>
+          <td>9/2 (수)</td><td>19:00</td><td><span class="badge c-climb">더클라임</span> 신촌점</td>
+          <td>5명</td>
+          <td><button class="btn-mini">수정</button><button class="btn-mini del">삭제</button></td>
+        </tr>
+        <tr>
+          <td>9/5 (토)</td><td>14:00</td><td><span class="badge c-focus">피커스</span> 구로점</td>
+          <td>3명</td>
+          <td><button class="btn-mini">수정</button><button class="btn-mini del">삭제</button></td>
+        </tr>
+      </table>
+    </div>
+  </section>
+
+  <section id="tab-food" class="tab">
+    <div class="rank-filters">
+      <span class="filter-label">체인</span>
+      <div class="seg" id="food-chain"></div>
+      <span class="filter-label">지점</span>
+      <select id="food-gym" class="gym-select" onchange="showGym()"></select>
+    </div>
+    <div class="food-layout">
+      <div id="map"></div>
+      <div>
+        <div class="side-card" style="margin-bottom:8px">
+          <h3 id="food-title">맛집 목록</h3>
+        </div>
+        <div class="food-list" id="food-list"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="modal-backdrop" id="modal-detail">
+  <div class="modal">
+    <span class="badge c-climb">더클라임</span>
+    <h3>더클라임 문래점</h3>
+    <div class="meta">
+      8월 26일 (수) 19:00 ~ 22:00<br>
+      등록자: 방장 &middot; 메모: 빨강/파랑 위주, 신규 세팅 날
+    </div>
+    <div class="attendees">
+      <h4>참가 예정 4명</h4>
+      <div class="attendee"><span class="avatar">김</span>김철수</div>
+      <div class="attendee"><span class="avatar">이</span>이지은</div>
+      <div class="attendee"><span class="avatar">한</span>한도윤</div>
+      <div class="attendee"><span class="avatar">최</span>최유진</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-join">참가할래요</button>
+      <button class="btn btn-out">불참이에요</button>
+    </div>
+    <button class="btn-close" onclick="closeModal('modal-detail')">닫기</button>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-new">
+  <div class="modal">
+    <h3>일정 등록 <span class="admin-chip" style="margin-left:6px">관리자 전용</span></h3>
+    <div class="meta">등록하면 모든 멤버의 달력에 바로 표시됩니다</div>
+    <div class="form-row">
+      <label>제목</label>
+      <input type="text" placeholder="예: 더클라임 문래점 정기 모임">
+    </div>
+    <div class="form-cols">
+      <div class="form-row">
+        <label>체인</label>
+        <select id="form-chain"></select>
+      </div>
+      <div class="form-row">
+        <label>지점</label>
+        <select id="form-gym"></select>
+      </div>
+    </div>
+    <div class="form-cols">
+      <div class="form-row">
+        <label>날짜</label>
+        <input type="date" value="2026-08-26">
+      </div>
+      <div class="form-row">
+        <label>시간</label>
+        <input type="time" value="19:00">
+      </div>
+    </div>
+    <div class="form-row">
+      <label>메모</label>
+      <textarea rows="2" placeholder="세팅 요일, 목표 등급 등 자유롭게"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-join" onclick="closeModal('modal-new')">등록</button>
+      <button class="btn btn-out" onclick="closeModal('modal-new')">취소</button>
+    </div>
+  </div>
+</div>
+
+<nav class="mobile-tabs">
+  <button data-tab="calendar" class="active">달력</button>
+  <button data-tab="ranking">랭킹</button>
+  <button data-tab="food">맛집</button>
+  <button data-tab="admin">관리</button>
+</nav>
+
+<script>
+const CHAINS = [
+  { name: "더클라임", cls: "c-climb", hex: "#ea580c",
+    grades: [["흰색", "#e5e7eb"], ["노란색", "#eab308"], ["주황색", "#f97316"], ["초록색", "#22c55e"], ["파란색", "#3b82f6"], ["빨간색", "#ef4444"], ["핑크색", "#ec4899"], ["보라색", "#a855f7"], ["회색", "#9ca3af"], ["갈색", "#92400e"]],
+    gyms: ["일산점", "연남점", "강남점", "논현점", "양재점", "이수점", "사당점", "신림점", "문래점", "마곡점", "성수점"] },
+  { name: "서울숲", cls: "c-seoul", hex: "#059669",
+    grades: [["분홍색", "#f9a8d4"], ["노란색", "#eab308"], ["초록색", "#22c55e"], ["파란색", "#3b82f6"], ["빨간색", "#ef4444"], ["보라색", "#a855f7"], ["회색", "#9ca3af"], ["검정색", "#111827"], ["핑크색", "#ec4899"]],
+    gyms: ["영등포점", "종로점", "잠실점", "구로점"] },
+  { name: "클라이밍파크", cls: "c-park", hex: "#2563eb",
+    grades: [["노랑", "#eab308"], ["주황", "#f97316"], ["초록", "#22c55e"], ["파랑", "#3b82f6"], ["빨강", "#ef4444"], ["보라", "#a855f7"], ["갈색", "#92400e"], ["회색", "#9ca3af"], ["검정", "#111827"], ["흰색", "#e5e7eb"]],
+    gyms: ["강남점", "종로점", "한티점"] },
+  { name: "온플릭", cls: "c-onflick", hex: "#4f46e5",
+    grades: [["빨강", "#ef4444"], ["주황", "#f97316"], ["노랑", "#eab308"], ["초록", "#22c55e"], ["파랑", "#3b82f6"], ["남색", "#3730a3"], ["보라", "#a855f7"], ["검정", "#111827"]],
+    gyms: ["천호점"] },
+  { name: "손상원", cls: "c-son", hex: "#e11d48",
+    grades: [["흰색", "#e5e7eb"], ["노랑", "#eab308"], ["초록", "#22c55e"], ["파랑", "#3b82f6"], ["빨강", "#ef4444"], ["검정", "#111827"], ["회색", "#9ca3af"], ["갈색", "#92400e"], ["핑크색", "#ec4899"], ["보라색", "#a855f7"]],
+    gyms: ["강남점", "을지로점", "판교점"] },
+  { name: "알레", cls: "c-alle", hex: "#0d9488",
+    grades: [["흰색", "#e5e7eb"], ["노랑", "#eab308"], ["초록", "#22c55e"], ["파랑", "#3b82f6"], ["빨강", "#ef4444"], ["회색", "#9ca3af"], ["갈색", "#92400e"], ["핑크색", "#ec4899"], ["검정", "#111827"]],
+    gyms: ["강동점", "혜화점"] },
+  { name: "피커스", cls: "c-focus", hex: "#7c3aed",
+    grades: [["빨강", "#ef4444"], ["주황", "#f97316"], ["노랑", "#eab308"], ["초록", "#22c55e"], ["하늘", "#7dd3fc"], ["파랑", "#3b82f6"], ["보라", "#a855f7"], ["회색", "#9ca3af"], ["검정", "#111827"]],
+    gyms: ["종로점", "신촌점", "구로점"] },
+  { name: "담장클라이밍", cls: "c-dam", hex: "#0891b2",
+    grades: [["빨강", "#ef4444"], ["주황", "#f97316"], ["노랑", "#eab308"], ["녹색", "#22c55e"], ["파랑", "#3b82f6"], ["남색", "#3730a3"], ["보라", "#a855f7"], ["흰색", "#e5e7eb"], ["검정", "#111827"]],
+    gyms: ["신촌점", "을지로점"] },
+  { name: "크래커", cls: "c-cracker", hex: "#db2777",
+    grades: [["빨강", "#ef4444"], ["주황", "#f97316"], ["노랑", "#eab308"], ["초록", "#22c55e"], ["파랑", "#3b82f6"], ["남색", "#3730a3"], ["보라", "#a855f7"], ["회색", "#9ca3af"], ["검정", "#111827"]],
+    gyms: ["상봉점"] }
+];
+
+const MEMBERS = ["김철수", "박민수", "이지은", "정우진", "최유진"];
+const SKILL = [1, 0.85, 0.7, 0.55, 0.45];
+
+const events = {
+  3: [{ name: "더클라임 문래점", cls: "c-climb", time: "19:00" }],
+  5: [{ name: "서울숲 영등포점", cls: "c-seoul", time: "20:00" }],
+  8: [{ name: "더클라임 신촌점", cls: "c-climb", time: "14:00" }],
+  12: [{ name: "클라이밍파크 강남점", cls: "c-park", time: "19:00" }],
+  15: [{ name: "손상원 을지로점", cls: "c-son", time: "19:30" }],
+  19: [{ name: "더클라임 마곡점", cls: "c-climb", time: "19:00" }],
+  22: [{ name: "피커스 종로점", cls: "c-focus", time: "10:00" }],
+  26: [{ name: "더클라임 문래점", cls: "c-climb", time: "19:00" }]
+};
+
+function renderCalendar() {
+  const grid = document.getElementById("calendar");
+  const dows = ["일", "월", "화", "수", "목", "금", "토"];
+  let html = dows.map((d, i) => `<div class="dow ${i === 0 ? "sun" : i === 6 ? "sat" : ""}">${d}</div>`).join("");
+  for (let i = 0; i < 6; i++) html += '<div class="day empty"></div>';
+  for (let d = 1; d <= 31; d++) {
+    const chips = (events[d] || [])
+      .map(e => `<button class="chip ${e.cls}" onclick="openModal('modal-detail')">${e.time} ${e.name}</button>`)
+      .join("");
+    html += `<div class="day ${d === 26 ? "today" : ""}"><div class="num">${d}</div>${chips}</div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function genCounts(ci, mi, n) {
+  const arr = [];
+  for (let g = 0; g < n; g++) {
+    const center = 1.5 + mi * 1.2;
+    const bell = Math.exp(-Math.pow((g - center) / 2.4, 2));
+    const jitter = 0.75 + 0.5 * Math.abs(Math.sin((ci + 1) * 13 + (mi + 1) * 7 + g * 3));
+    arr.push(Math.max(0, Math.round(bell * SKILL[mi] * 46 * jitter)));
+  }
+  return arr;
+}
+
+function renderChainChips() {
+  const wrap = document.getElementById("chain-chips");
+  wrap.innerHTML = CHAINS.map((c, i) =>
+    `<button class="chipbtn ${i === 0 ? "active" : ""}" onclick="selectChain(${i})">
+       <span class="gdot" style="background:${c.hex};border-color:${c.hex}"></span>${c.name}
+     </button>`).join("");
+}
+
+function selectChain(idx) {
+  document.querySelectorAll("#chain-chips .chipbtn").forEach((b, i) =>
+    b.classList.toggle("active", i === idx));
+  renderGradeTable(idx);
+}
+
+function renderGradeTable(ci) {
+  const c = CHAINS[ci];
+  const area = document.getElementById("grade-table-area");
+  if (!c.grades.length) {
+    area.innerHTML = '<p style="font-size:13px;color:#9ca3af">등급 정보가 아직 등록되지 않은 체인입니다.</p>';
+    return;
+  }
+  const order = c.grades.map((_, i) => i).reverse();
+  let head = `<tr><th>순위</th><th>이름</th>`;
+  order.forEach(gi => {
+    const [name, hex] = c.grades[gi];
+    head += `<th><span class="gdot" style="background:${hex}"></span> ${name}</th>`;
+  });
+  head += `</tr>`;
+
+  let rows = MEMBERS.map((m, mi) => ({ name: m, counts: genCounts(ci, mi, c.grades.length) }));
+  rows.sort((a, b) => {
+    for (const gi of order) {
+      if (a.counts[gi] !== b.counts[gi]) return b.counts[gi] - a.counts[gi];
+    }
+    return 0;
+  });
+
+  let body = "";
+  rows.forEach((r, ri) => {
+    const cls = ri === 0 ? "r1" : ri === 1 ? "r2" : ri === 2 ? "r3" : "";
+    body += `<tr><td><span class="rank-num ${cls}">${ri + 1}</span></td>
+             <td><span class="g-name">${r.name}</span></td>`;
+    order.forEach(gi => { body += `<td>${r.counts[gi]}</td>`; });
+    body += `</tr>`;
+  });
+
+  area.innerHTML = `<table class="grade-table">${head}${body}</table>`;
+}
+
+function renderFormSelects() {
+  const chainSel = document.getElementById("form-chain");
+  const gymSel = document.getElementById("form-gym");
+  chainSel.innerHTML = CHAINS.map((c, i) => `<option value="${i}">${c.name}</option>`).join("");
+  const fillGyms = () => {
+    gymSel.innerHTML = CHAINS[chainSel.value].gyms.map(g => `<option>${g}</option>`).join("");
+  };
+  chainSel.addEventListener("change", fillGyms);
+  fillGyms();
+}
+
+function switchTab(name) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.getElementById("tab-" + name).classList.add("active");
+  document.querySelectorAll("nav button").forEach(b =>
+    b.classList.toggle("active", b.dataset.tab === name));
+  window.scrollTo(0, 0);
+  if (name === "food") setTimeout(initFoodMap, 60);
+}
+
+const GYM_LOC = {
+  "더클라임|문래점": [37.5178, 126.8864],
+  "더클라임|신촌점": [37.5565, 126.9440],
+  "더클라임|마곡점": [37.5600, 126.8270],
+  "서울숲|영등포점": [37.5260, 126.8960],
+  "서울숲|잠실점": [37.5110, 127.0865],
+  "서울숲|구로점": [37.4846, 126.9012],
+  "클라이밍파크|강남점": [37.4989, 127.0287],
+  "손상원|강남점": [37.5000, 127.0260],
+  "손상원|을지로점": [37.5663, 126.9910],
+  "피커스|종로점": [37.5700, 126.9895],
+  "알레|혜화점": [37.5825, 127.0010],
+  "알레|강동점": [37.5355, 127.1310],
+  "크래커|상봉점": [37.5970, 127.0855],
+  "담장클라이밍|신촌점": [37.5565, 126.9440],
+  "담장클라이밍|을지로점": [37.5663, 126.9910]
+};
+
+const RESTAURANTS = [
+  { chain: "알레", gym: "혜화점", name: "히메카츠", cat: "일식 돈카츠", memo: "", lat: 37.5717418, lng: 126.9977031, link: "https://naver.me/5pwZm2Yq" },
+  { chain: "알레", gym: "혜화점", name: "고봉당 혜화대학로본점", cat: "등갈비", memo: "등갈비는 보통, 인절미구이가 댑악", lat: 37.5829392, lng: 127.0001425, link: "https://naver.me/GV2tYj49" },
+  { chain: "알레", gym: "혜화점", name: "온혜화", cat: "밀크티", memo: "테이크아웃만 가능", lat: 37.5826171, lng: 127.0030740, link: "https://naver.me/FHlgzdUx" },
+  { chain: "알레", gym: "혜화점", name: "솔트24 혜화본점", cat: "크로와상", memo: "", lat: 37.5817126, lng: 127.0041249, link: "https://naver.me/xq3aeAf3" },
+  { chain: "크래커", gym: "상봉점", name: "제철실비 외대앞점", cat: "장어덮밥", memo: "", lat: 37.5954837, lng: 127.0611478, link: "https://naver.me/F3EAVkSn" },
+  { chain: "크래커", gym: "상봉점", name: "소주관", cat: "전 메뉴", memo: "", lat: 37.5943359, lng: 127.0897561, link: "https://naver.me/GvW21yJI" },
+  { chain: "서울숲", gym: "잠실점", name: "쭈꾸미도사 잠실새내점", cat: "쭈곱새", memo: "", lat: 37.5107795, lng: 127.0823010, link: "https://naver.me/Gxk126PX" },
+  { chain: "클라이밍파크", gym: "강남점", name: "멘츠루 강남점", cat: "츠케멘", memo: "강남권 공용 추천", lat: 37.5020414, lng: 127.0268531, link: "https://naver.me/I55amOAC" },
+  { chain: "알레", gym: "강동점", name: "예월수족발명가 예가족발", cat: "족발", memo: "거리는 있지만 가서 먹을 만한 믿음", lat: 37.5330170, lng: 127.1387827, link: "https://naver.me/xa52FRwO" },
+  { chain: "손상원", gym: "강남점", name: "웨인스베이글스 강남역점", cat: "베이글+샌드위치", memo: "", lat: 37.4919460, lng: 127.0288535, link: "https://naver.me/5vcHFMYN" },
+  { chain: "클라이밍파크", gym: "강남점", name: "자갈치양곱창", cat: "한우곱창구이", memo: "", lat: 37.4944988, lng: 127.0308697, link: "https://naver.me/xHgIutF2" },
+  { chain: "클라이밍파크", gym: "강남점", name: "뼈탄집 강남역점", cat: "삼겹살", memo: "", lat: 37.4952168, lng: 127.0309779, link: "https://naver.me/FoENCipm" },
+  { chain: "클라이밍파크", gym: "강남점", name: "찬란한아구 강남본점", cat: "아구찜", memo: "아구찜 초보자 전용", lat: 37.4948778, lng: 127.0303648, link: "https://naver.me/FxFtVV71" },
+  { chain: "손상원", gym: "을지로점", name: "가쯔야 무교본점", cat: "일식 돈까스", memo: "", lat: 37.5678200, lng: 126.9817366, link: "https://naver.me/FtTh658H" },
+  { chain: "손상원", gym: "을지로점", name: "한성양꼬치 종각점", cat: "양꼬치", memo: "", lat: 37.5695618, lng: 126.9843029, link: "https://naver.me/Gq84BTBp" },
+  { chain: "서울숲", gym: "구로점", name: "아건 구디역점", cat: "인도 커리", memo: "", lat: 37.4836067, lng: 126.9009031, link: "https://naver.me/GG7tBjQw" }
+];
+
+let foodMap = null;
+let gymMarker = null;
+let foodMarkers = [];
+let foodChainIdx = 0;
+
+function buildFoodControls() {
+  const seg = document.getElementById("food-chain");
+  seg.innerHTML = CHAINS.map((c, i) =>
+    `<button class="${i === 0 ? "active" : ""}" onclick="selectFoodChain(${i})">${c.name}</button>`).join("");
+  fillFoodGyms();
+}
+
+function selectFoodChain(i) {
+  foodChainIdx = i;
+  document.querySelectorAll("#food-chain button").forEach((b, bi) =>
+    b.classList.toggle("active", bi === i));
+  fillFoodGyms();
+}
+
+function fillFoodGyms() {
+  const sel = document.getElementById("food-gym");
+  sel.innerHTML = CHAINS[foodChainIdx].gyms.map(g => `<option>${g}</option>`).join("");
+  showGym();
+}
+
+function showGym() {
+  if (!foodMap) return;
+  const chain = CHAINS[foodChainIdx].name;
+  const gym = document.getElementById("food-gym").value;
+  const loc = GYM_LOC[chain + "|" + gym] || [37.5665, 126.9780];
+  foodMap.setView(loc, 14);
+  if (gymMarker) foodMap.removeLayer(gymMarker);
+  gymMarker = L.circleMarker(loc, {
+    radius: 10, color: "#fff", weight: 3,
+    fillColor: "#ea580c", fillOpacity: 1
+  }).addTo(foodMap).bindPopup(`<b>${chain} ${gym}</b>`);
+  foodMarkers.forEach(m => foodMap.removeLayer(m));
+  foodMarkers = [];
+  const list = document.getElementById("food-list");
+  const items = RESTAURANTS.filter(r => r.chain === chain && r.gym === gym);
+  document.getElementById("food-title").innerHTML =
+    `${chain} ${gym} 근처 <small>${items.length}곳</small>`;
+  list.innerHTML = "";
+  if (!items.length) {
+    list.innerHTML = '<div class="food-item"><div class="f-name">등록된 맛집이 없습니다</div><div class="f-memo">실제 목록을 받으면 채워넣을 예정</div></div>';
+    return;
+  }
+  items.forEach((r, i) => {
+    const m = L.marker([r.lat, r.lng]).addTo(foodMap)
+      .bindPopup(`<b>${r.name}</b><br>${r.cat}${r.memo ? " &middot; " + r.memo : ""}<br><a href="${r.link}" target="_blank">네이버지도에서 보기</a>`);
+    foodMarkers.push(m);
+    const div = document.createElement("div");
+    div.className = "food-item";
+    div.innerHTML = `<div class="f-name">${i + 1}. ${r.name}<span class="f-cat">${r.cat}</span></div><div class="f-memo">${r.memo || ""} ${r.link ? `&middot; <a href="${r.link}" target="_blank" onclick="event.stopPropagation()">네이버지도</a>` : ""}</div>`;
+    div.onclick = () => { foodMap.flyTo([r.lat, r.lng], 16); setTimeout(() => m.openPopup(), 350); };
+    list.appendChild(div);
+  });
+}
+
+function initFoodMap() {
+  if (foodMap) { foodMap.invalidateSize(); showGym(); return; }
+  foodMap = L.map("map").setView([37.5665, 126.9780], 12);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap"
+  }).addTo(foodMap);
+  showGym();
+}
+
+document.querySelectorAll("nav button").forEach(b =>
+  b.addEventListener("click", () => switchTab(b.dataset.tab)));
+
+document.querySelectorAll(".seg").forEach(seg =>
+  seg.addEventListener("click", e => {
+    if (e.target.tagName !== "BUTTON") return;
+    seg.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+    e.target.classList.add("active");
+  }));
+
+function openModal(id) { document.getElementById(id).classList.add("open"); }
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+document.querySelectorAll(".modal-backdrop").forEach(m =>
+  m.addEventListener("click", e => { if (e.target === m) m.classList.remove("open"); }));
+
+renderCalendar();
+renderChainChips();
+renderGradeTable(0);
+renderFormSelects();
+buildFoodControls();
+</script>
+</body>
+</html>
