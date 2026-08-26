@@ -7,6 +7,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import json
+import random
 import re
 import time
 import urllib.parse
@@ -337,6 +338,45 @@ def _geocode_address(addr: str):
     return None
 
 
+GYM_LOC_FALLBACK = {
+    "더클라임|일산점": [37.6509637, 126.7789645],
+    "더클라임|마곡점": [37.5683705, 126.8352576],
+    "더클라임|양재점": [37.4851554, 127.0358628],
+    "더클라임|신림점": [37.4822801, 126.9290378],
+    "더클라임|연남점": [37.5576337, 126.9258847],
+    "더클라임|강남점": [37.4975932, 127.0320012],
+    "더클라임|사당점": [37.4743726, 126.9814277],
+    "더클라임|논현점": [37.4692093, 127.0395713],
+    "더클라임|문래점": [37.5323202, 126.9008117],
+    "더클라임|이수점": [37.5041030, 126.9803607],
+    "더클라임|성수점": [37.5467319, 127.0652697],
+    "서울숲|영등포점": [37.5178032, 126.9000578],
+    "서울숲|종로점": [37.5697586, 126.9896402],
+    "서울숲|잠실점": [37.5107795, 127.0823010],
+    "서울숲|구로점": [37.4845924, 126.8963929],
+    "클라이밍파크|강남점": [37.4952945, 127.0294347],
+    "클라이밍파크|종로점": [37.5700, 126.9895],
+    "클라이밍파크|한티점": [37.4965, 127.0555],
+    "온플릭|천호점": [37.5380, 127.1230],
+    "손상원|강남점": [37.5000, 127.0260],
+    "손상원|을지로점": [37.5663, 126.9910],
+    "손상원|판교점": [37.3950, 127.1110],
+    "알레|혜화점": [37.5843680, 127.0010746],
+    "알레|강동점": [37.5330170, 127.1387827],
+    "피커스|종로점": [37.5700, 126.9895],
+    "피커스|신촌점": [37.5565, 126.9440],
+    "피커스|구로점": [37.4846, 126.9012],
+    "담장클라이밍|신촌점": [37.5565, 126.9440],
+    "담장클라이밍|을지로점": [37.5663, 126.9910],
+    "크래커|상봉점": [37.5970, 127.0855],
+    "오프더월|이태원점": [37.5345, 126.9940],
+    "웨이브락|서면점": [35.1577, 129.0596],
+    "웨이브락|남천점": [35.1390, 129.1120],
+    "웨이브락|부산대점": [35.2300, 129.0840],
+    "기타|기타": [37.5665, 126.9780]
+}
+
+
 def _extract_naver_place(naver_url: str):
     name = None
     addr = None
@@ -437,7 +477,18 @@ def add_restaurant(body: RestaurantIn):
     if not name:
         raise HTTPException(status_code=400, detail="가게 이름을 입력하거나 네이버 링크를 넣어주세요")
     if lat is None or lng is None:
-        raise HTTPException(status_code=400, detail="좌표를 찾을 수 없습니다. 주소를 확인하거나 네이버 링크를 정확히 넣어주세요")
+        row2 = conn.execute(
+            "SELECT g.name AS gym_name, c.name AS chain_name FROM gyms g JOIN chains c ON c.id=g.chain_id WHERE g.id=?",
+            (body.gym_id,),
+        ).fetchone()
+        if row2:
+            key = f"{row2['chain_name']}|{row2['gym_name']}"
+            base = GYM_LOC_FALLBACK.get(key)
+            if base:
+                lat = base[0] + random.uniform(-0.002, 0.002)
+                lng = base[1] + random.uniform(-0.002, 0.002)
+    if lat is None or lng is None:
+        raise HTTPException(status_code=400, detail="좌표를 찾을 수 없습니다. 가게 이름을 함께 입력해 보세요")
     cur = conn.execute(
         "INSERT INTO restaurants(gym_id, name, category, memo, lat, lng, link) VALUES (?, ?, ?, ?, ?, ?, ?)",
         (body.gym_id, name, category, memo, lat, lng, link),
