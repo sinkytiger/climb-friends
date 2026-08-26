@@ -6,7 +6,7 @@
 <title>클라임 프렌즈 대시보드</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="/static/style.css?v=20260827j">
+<link rel="stylesheet" href="/static/style.css?v=20260827k">
 </head>
 <body>
 
@@ -100,6 +100,12 @@
       <div class="seg" id="food-chain"></div>
       <span class="filter-label">지점</span>
       <select id="food-gym" class="gym-select" onchange="showGym()"></select>
+      <span class="filter-label">반경</span>
+      <div class="seg" id="radius-seg">
+        <button data-r="500">500m</button>
+        <button data-r="700" class="active">700m</button>
+        <button data-r="1000">1km</button>
+      </div>
     </div>
     <div class="food-layout">
       <div id="map"></div>
@@ -303,6 +309,6 @@
   <button data-tab="admin" class="admin-only">관리</button>
 </nav>
 
-<script src="/static/app.js?v=20260827j"></script>
+<script src="/static/app.js?v=20260827k"></script>
 </body>
 </html>

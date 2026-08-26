@@ -784,6 +784,12 @@ function buildFoodControls() {
   const seg = document.getElementById("food-chain");
   seg.innerHTML = BOOT.chains.map((c, i) =>
     `<button class="${i === 0 ? "active" : ""}" onclick="selectFoodChain(${i})">${esc(c.name)}</button>`).join("");
+  document.querySelectorAll("#radius-seg button").forEach(b =>
+    b.addEventListener("click", () => {
+      document.querySelectorAll("#radius-seg button").forEach(x => x.classList.remove("active"));
+      b.classList.add("active");
+      showGym();
+    }));
   fillFoodGyms();
 }
 
@@ -800,6 +806,13 @@ function fillFoodGyms() {
   showGym();
 }
 
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371000, toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1), dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
 function showGym() {
   if (!foodMap) return;
   const chain = BOOT.chains[foodChainIdx];
@@ -811,24 +824,34 @@ function showGym() {
     radius: 10, color: "#fff", weight: 3,
     fillColor: chainHex(chain.name), fillOpacity: 1
   }).addTo(foodMap).bindPopup(`<b>${esc(chain.name)} ${esc(gym)}</b>`);
+  if (typeof L.circle !== "undefined" && document.getElementById("radius-seg")) {
+    if (window._radiusCircle) foodMap.removeLayer(window._radiusCircle);
+    const r = Number(document.querySelector("#radius-seg .active")?.dataset.r || 700);
+    window._radiusCircle = L.circle(loc, { radius: r, color: chainHex(chain.name), weight: 1, fillOpacity: 0.06 }).addTo(foodMap);
+  }
   foodMarkers.forEach(m => foodMap.removeLayer(m));
   foodMarkers = [];
   const list = document.getElementById("food-list");
-  const items = RESTAURANTS.filter(r => r.chain === chain.name && r.gym === gym);
+  const radius = Number(document.querySelector("#radius-seg .active")?.dataset.r || 700);
+  const items = RESTAURANTS.filter(r => {
+    if (r.lat == null || r.lng == null) return r.chain === chain.name && r.gym === gym;
+    return haversine(loc[0], loc[1], r.lat, r.lng) <= radius;
+  });
   document.getElementById("food-title").innerHTML =
-    `${esc(chain.name)} ${esc(gym)} 근처 <small>${items.length}곳</small>`;
+    `${esc(chain.name)} ${esc(gym)} 근처 <small>${items.length}곳 · ${radius}m 이내</small>`;
   list.innerHTML = "";
   if (!items.length) {
-    list.innerHTML = '<div class="food-item"><div class="f-name">등록된 맛집이 없습니다</div><div class="f-memo">추후 추가 예정</div></div>';
+    list.innerHTML = '<div class="food-item"><div class="f-name">반경 내 등록된 맛집이 없습니다</div><div class="f-memo">멤버가 보낸 네이버 링크를 지도 데이터로 계속 추가할 수 있어요</div></div>';
     return;
   }
   items.forEach((r, i) => {
     const m = L.marker([r.lat, r.lng]).addTo(foodMap)
       .bindPopup(`<b>${esc(r.name)}</b><br>${esc(r.cat)}${r.memo ? " &middot; " + esc(r.memo) : ""}<br><a href="${r.link}" target="_blank">네이버지도에서 보기</a>`);
     foodMarkers.push(m);
+    const dist = Math.round(haversine(loc[0], loc[1], r.lat, r.lng));
     const div = document.createElement("div");
     div.className = "food-item";
-    div.innerHTML = `<div class="f-name">${i + 1}. ${esc(r.name)}<span class="f-cat">${esc(r.cat)}</span></div><div class="f-memo">${esc(r.memo || "")} &middot; <a href="${r.link}" target="_blank" onclick="event.stopPropagation()">네이버지도</a></div>`;
+    div.innerHTML = `<div class="f-name">${i + 1}. ${esc(r.name)}<span class="f-cat">${esc(r.cat)}</span></div><div class="f-memo">${esc(r.memo || "")} · ${dist}m · <a href="${r.link}" target="_blank" onclick="event.stopPropagation()">네이버지도</a></div>`;
     div.onclick = () => { foodMap.flyTo([r.lat, r.lng], 16); setTimeout(() => m.openPopup(), 350); };
     list.appendChild(div);
   });
