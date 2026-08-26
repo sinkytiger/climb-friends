@@ -479,24 +479,57 @@ async function deleteMember(id) {
   } catch (e) { alert(e.message); }
 }
 
-function renderMemberList() {
-  const el = document.getElementById("member-list");
-  el.innerHTML = BOOT.members.map(m =>
-    `<li style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px 2px;border-bottom:1px solid #f9fafb;font-size:14px;">
-       <span>${esc(m.name)}${m.no_rank ? ' <span class="empty-note">(랭킹 제외)</span>' : ""}</span>
-       <span style="white-space:nowrap">
-         <button class="btn-mini" onclick="toggleMemberRank(${m.id}, ${m.no_rank ? 0 : 1})">${m.no_rank ? "랭킹 참여" : "랭킹 제외"}</button>
-         <button class="btn-mini del" onclick="deleteMember(${m.id})">삭제</button>
-       </span>
-     </li>`).join("") || '<li><span class="empty-note">멤버를 추가해 주세요</span></li>';
+function calcAge(birthDate) {
+  if (!birthDate) return "";
+  const b = new Date(birthDate);
+  if (isNaN(b.getTime())) return "";
+  const t = new Date();
+  let age = t.getFullYear() - b.getFullYear();
+  const m = t.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && t.getDate() < b.getDate())) age--;
+  return age >= 0 && age < 150 ? age : "";
 }
 
-async function toggleMemberRank(id, noRank) {
+function renderMemberList() {
+  const el = document.getElementById("member-list");
+  el.innerHTML = BOOT.members.map(m => {
+    const age = calcAge(m.birth_date);
+    const bday = m.birth_date ? ` · ${esc(m.birth_date)}${age !== "" ? ` (${age}세)` : ""}` : "";
+    return `<li style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px 2px;border-bottom:1px solid #f9fafb;font-size:14px;">
+       <span>${esc(m.name)}${m.no_rank ? ' <span class="empty-note">(랭킹 제외)</span>' : ""}<span style="font-size:11px;color:#9ca3af">${bday}</span></span>
+       <span style="white-space:nowrap">
+         <button class="btn-mini" onclick="openMemberSettings(${m.id})">설정</button>
+         <button class="btn-mini del" onclick="deleteMember(${m.id})">삭제</button>
+       </span>
+     </li>`;
+  }).join("") || '<li><span class="empty-note">멤버를 추가해 주세요</span></li>';
+}
+
+let _editingMemberId = null;
+
+function openMemberSettings(id) {
+  const m = BOOT.members.find(x => x.id === id);
+  if (!m) return;
+  _editingMemberId = id;
+  document.getElementById("me-name-edit").value = m.name;
+  document.getElementById("me-birth-edit").value = m.birth_date || "";
+  document.getElementById("me-no-rank-edit").checked = !!m.no_rank;
+  openModal("modal-member-edit");
+}
+
+async function saveMemberSettings() {
+  if (_editingMemberId == null) return;
+  const name = document.getElementById("me-name-edit").value.trim();
+  const birth = document.getElementById("me-birth-edit").value;
+  const noRank = document.getElementById("me-no-rank-edit").checked;
+  if (!name) { alert("이름을 입력하세요"); return; }
   try {
-    await adminApi(`/api/members/${id}/rank`, {
+    await adminApi(`/api/members/${_editingMemberId}`, {
       method: "PUT",
-      body: JSON.stringify({ no_rank: !!noRank })
+      body: JSON.stringify({ name, birth_date: birth || "", no_rank: noRank })
     });
+    closeModal("modal-member-edit");
+    _editingMemberId = null;
     await refreshMembers();
     await renderMemberList();
     await loadRankings();

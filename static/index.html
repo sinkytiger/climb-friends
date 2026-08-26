@@ -6,7 +6,7 @@
 <title>클라임 프렌즈 대시보드</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="/static/style.css?v=20260827g">
+<link rel="stylesheet" href="/static/style.css?v=20260827h">
 </head>
 <body>
 
@@ -274,6 +274,27 @@
   &middot; 클라임 프렌즈 대시보드
 </footer>
 
+<div class="modal-backdrop" id="modal-member-edit">
+  <div class="modal">
+    <h3>멤버 설정</h3>
+    <div class="form-row">
+      <label>이름</label>
+      <input type="text" id="me-name-edit">
+    </div>
+    <div class="form-row">
+      <label>생일</label>
+      <input type="date" id="me-birth-edit">
+    </div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;margin-bottom:12px">
+      <input type="checkbox" id="me-no-rank-edit"> 랭킹 제외
+    </label>
+    <div class="modal-actions">
+      <button class="btn btn-join" onclick="saveMemberSettings()">저장</button>
+      <button class="btn btn-out" onclick="closeModal('modal-member-edit')">취소</button>
+    </div>
+  </div>
+</div>
+
 <nav class="mobile-tabs">
   <button data-tab="calendar" class="active">달력</button>
   <button data-tab="ranking">랭킹</button>
@@ -281,6 +302,6 @@
   <button data-tab="admin" class="admin-only">관리</button>
 </nav>
 
-<script src="/static/app.js?v=20260827g"></script>
+<script src="/static/app.js?v=20260827h"></script>
 </body>
 </html>

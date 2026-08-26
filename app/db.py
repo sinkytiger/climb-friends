@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS grades (
 CREATE TABLE IF NOT EXISTS members (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
-    no_rank INTEGER NOT NULL DEFAULT 0
+    no_rank INTEGER NOT NULL DEFAULT 0,
+    birth_date TEXT
 );
 CREATE TABLE IF NOT EXISTS events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -98,6 +99,9 @@ def init_db():
         cols = [r["name"] for r in conn.execute("PRAGMA table_info(members)")]
         if "no_rank" not in cols:
             conn.execute("ALTER TABLE members ADD COLUMN no_rank INTEGER NOT NULL DEFAULT 0")
+            conn.commit()
+        if "birth_date" not in cols:
+            conn.execute("ALTER TABLE members ADD COLUMN birth_date TEXT")
             conn.commit()
         if conn.execute("SELECT COUNT(*) AS n FROM chains").fetchone()["n"] == 0:
             seed(conn)

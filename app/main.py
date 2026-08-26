@@ -57,6 +57,12 @@ class MemberIn(BaseModel):
     name: str
 
 
+class MemberUpdateIn(BaseModel):
+    name: Optional[str] = None
+    birth_date: Optional[str] = None
+    no_rank: Optional[bool] = None
+
+
 class GymIn(BaseModel):
     chain_id: int
     name: str
@@ -124,7 +130,7 @@ def bootstrap():
     members = [
         dict(r)
         for r in conn.execute(
-            "SELECT id, name, no_rank FROM members ORDER BY name COLLATE NOCASE"
+            "SELECT id, name, no_rank, birth_date FROM members ORDER BY name COLLATE NOCASE"
         )
     ]
     return {"chains": chains, "members": members}
@@ -307,7 +313,7 @@ def list_members():
         "members": [
             dict(r)
             for r in conn.execute(
-                "SELECT id, name, no_rank FROM members ORDER BY name COLLATE NOCASE"
+                "SELECT id, name, no_rank, birth_date FROM members ORDER BY name COLLATE NOCASE"
             )
         ]
     }
@@ -332,6 +338,48 @@ def delete_member(member_id: int):
     conn = get_conn()
     conn.execute("DELETE FROM members WHERE id=?", (member_id,))
     conn.commit()
+    return {"ok": True}
+
+
+@app.put("/api/members/{member_id}", dependencies=[Depends(check_admin)])
+def update_member(member_id: int, body: MemberUpdateIn):
+    conn = get_conn()
+    row = conn.execute("SELECT id FROM members WHERE id=?", (member_id,)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="멤버를 찾을 수 없습니다")
+    updates = []
+    params = []
+    if body.name is not None:
+        name = body.name.strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="이름을 입력하세요")
+        try:
+            updates.append("name=?")
+            params.append(name)
+        except Exception:
+            pass
+    if body.birth_date is not None:
+        bd = body.birth_date.strip()
+        if bd == "":
+            updates.append("birth_date=NULL")
+        else:
+            if not valid_date(bd):
+                raise HTTPException(status_code=400, detail="생일 형식은 YYYY-MM-DD 입니다")
+            updates.append("birth_date=?")
+            params.append(bd)
+    if body.no_rank is not None:
+        updates.append("no_rank=?")
+        params.append(1 if body.no_rank else 0)
+    if not updates:
+        return {"ok": True}
+    params.append(member_id)
+    try:
+        conn.execute(f"UPDATE members SET {', '.join(updates)} WHERE id=?", params)
+        conn.commit()
+    except Exception as e:
+        if "UNIQUE" in str(e):
+            raise HTTPException(status_code=400, detail="이미 존재하는 이름입니다")
+        raise
     return {"ok": True}
 
 
