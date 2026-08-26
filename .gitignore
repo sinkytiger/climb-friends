@@ -10,3 +10,8 @@ spike/.env
 spike/tokens.json
 spike/calendars_dump.json
 spike/events_dump.json
+
+# SSH 키 (절대 커밋 금지)
+*.key
+*.key.pub
+*.pem

@@ -56,6 +56,11 @@ class MemberIn(BaseModel):
     name: str
 
 
+class GymIn(BaseModel):
+    chain_id: int
+    name: str
+
+
 class ClearIn(BaseModel):
     member_id: int
     gym_id: int
@@ -267,6 +272,26 @@ def rsvp(event_id: int, body: RsvpIn):
     )
     conn.commit()
     return {"ok": True}
+
+
+@app.post("/api/gyms", dependencies=[Depends(check_admin)])
+def add_gym(body: GymIn):
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="암장 이름을 입력하세요")
+    conn = get_conn()
+    if not conn.execute("SELECT 1 FROM chains WHERE id=?", (body.chain_id,)).fetchone():
+        raise HTTPException(status_code=400, detail="체인이 올바르지 않습니다")
+    row = conn.execute(
+        "SELECT id FROM gyms WHERE chain_id=? AND name=?", (body.chain_id, name)
+    ).fetchone()
+    if row:
+        return {"id": row["id"]}
+    cur = conn.execute(
+        "INSERT INTO gyms(chain_id, name) VALUES (?, ?)", (body.chain_id, name)
+    )
+    conn.commit()
+    return {"id": cur.lastrowid}
 
 
 @app.get("/api/members")

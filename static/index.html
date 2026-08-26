@@ -1,30 +1,30 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>?대씪???꾨젋利???쒕낫??/title>
+<title>클라임 프렌즈 대시보드</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="/static/style.css?v=20260827b">
+<link rel="stylesheet" href="/static/style.css?v=20260827c">
 </head>
 <body>
 
 <header>
   <div class="brand">
-    <img src="/static/logo.png" alt="?대씪???꾨젋利? class="logo-img"
+    <img src="/static/logo.png" alt="클라임 프렌즈" class="logo-img"
          onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex';">
     <div class="logo-fallback" id="logo-fallback">CLIMB FRIENDS<span class="dot">.</span></div>
-    <div class="title">?대씪???꾨젋利???쒕낫??/div>
+    <div class="title">클라임 프렌즈 대시보드</div>
   </div>
   <nav class="tabs">
-    <button data-tab="calendar" class="active">?щ젰</button>
-    <button data-tab="ranking">??궧</button>
-    <button data-tab="food">留쏆쭛</button>
-    <button data-tab="admin" class="admin-only">愿由?/button>
+    <button data-tab="calendar" class="active">달력</button>
+    <button data-tab="ranking">랭킹</button>
+    <button data-tab="food">맛집</button>
+    <button data-tab="admin" class="admin-only">관리</button>
   </nav>
   <div class="user">
-    <span class="admin-chip admin-only">愿由ъ옄 紐⑤뱶</span>
+    <span class="admin-chip admin-only">관리자 모드</span>
   </div>
 </header>
 
@@ -33,7 +33,7 @@
     <div class="cal-layout">
       <aside>
         <div class="side-card">
-          <h3>?명똿 ?쇱젙 <small id="setting-today"></small></h3>
+          <h3>세팅 일정 <small id="setting-today"></small></h3>
           <div class="seg setting-days" id="setting-days"></div>
           <ol id="setting-list"></ol>
         </div>
@@ -44,18 +44,18 @@
           <h2 id="month-label"></h2>
           <button class="nav-btn" id="next-month">&#9654;</button>
           <div class="spacer"></div>
-          <button class="btn-primary" id="btn-goto-admin" onclick="switchTab('admin')">+ ?쇱젙 ?깅줉</button>
-          <span class="admin-only-tag" id="tag-goto-admin">愿由ъ옄 ?꾩슜</span>
+          <button class="btn-primary" id="btn-goto-admin" onclick="switchTab('admin')">+ 일정 등록</button>
+          <span class="admin-only-tag" id="tag-goto-admin">관리자 전용</span>
         </div>
         <div class="cal-grid" id="calendar"></div>
       </div>
       <aside>
         <div class="side-card">
-          <h3>?쇱젙 李몄뿬 ??궧 <small>?대쾲 遺꾧린</small></h3>
+          <h3>일정 참여 랭킹 <small>이번 분기</small></h3>
           <ol id="rank-att-side"></ol>
         </div>
         <div class="side-card">
-          <h3>?ㅺ??ㅻ뒗 ?쇱젙 <small>理쒓렐 3嫄?/small></h3>
+          <h3>다가오는 일정 <small>최근 3건</small></h3>
           <ol id="upcoming-side"></ol>
         </div>
       </aside>
@@ -64,24 +64,24 @@
 
   <section id="tab-ranking" class="tab">
     <div class="rank-filters">
-      <span class="filter-label">湲곌컙</span>
+      <span class="filter-label">기간</span>
       <div class="seg" id="seg-period">
-        <button data-period="quarter" class="active">遺꾧린</button>
-        <button data-period="all">?꾩껜</button>
+        <button data-period="quarter" class="active">분기</button>
+        <button data-period="all">전체</button>
       </div>
     </div>
     <div class="rank-cards">
       <div class="card" style="margin-bottom:0">
-        <h3>臾몄젣 ?대━????궧 <small>吏???⑹궛 (李멸퀬??珥?媛쒖닔)</small></h3>
+        <h3>문제 클리어 랭킹 <small>지점 합산 (참고용 총 개수)</small></h3>
         <ol id="rank-clears-list"></ol>
       </div>
       <div class="card" style="margin-bottom:0">
-        <h3>?쇱젙 李몄뿬 ??궧 <small>RSVP 湲곗?</small></h3>
+        <h3>일정 참여 랭킹 <small>RSVP 기준</small></h3>
         <ol id="rank-att-list"></ol>
       </div>
     </div>
     <div class="card">
-      <h3>洹몃젅?대뱶蹂??대━????궧 <small>?대젮???깃툒遺??鍮꾧탳</small></h3>
+      <h3>그레이드별 클리어 랭킹 <small>어려운 등급부터 비교</small></h3>
       <div class="chain-chips" id="chain-chips"></div>
       <div class="grade-table-wrap">
         <div id="grade-table-area"></div>
@@ -91,16 +91,16 @@
 
   <section id="tab-food" class="tab">
     <div class="rank-filters">
-      <span class="filter-label">泥댁씤</span>
+      <span class="filter-label">체인</span>
       <div class="seg" id="food-chain"></div>
-      <span class="filter-label">吏??/span>
+      <span class="filter-label">지점</span>
       <select id="food-gym" class="gym-select" onchange="showGym()"></select>
     </div>
     <div class="food-layout">
       <div id="map"></div>
       <div>
         <div class="side-card" style="margin-bottom:8px">
-          <h3 id="food-title">留쏆쭛 紐⑸줉</h3>
+          <h3 id="food-title">맛집 목록</h3>
         </div>
         <div class="food-list" id="food-list"></div>
       </div>
@@ -109,76 +109,76 @@
 
   <section id="tab-admin" class="tab">
     <div class="admin-notice">
-      ?쇱젙 ?깅줉/?섏젙/??젣, ?대━??湲곕줉 ?낅젰, 李멸???愿由щ뒗 愿由ъ옄(?대떦??留??????덉뒿?덈떎. ?ㅻⅨ 硫ㅻ쾭???대엺留?媛?ν빐??
+      일정 등록/수정/삭제, 클리어 기록 입력, 참가자 관리는 관리자(담당자)만 할 수 있습니다. 다른 멤버는 열람만 가능해요.
     </div>
     <div class="cal-head">
-      <h2 style="font-size:18px">?쇱젙 愿由?/h2>
+      <h2 style="font-size:18px">일정 관리</h2>
       <div class="spacer"></div>
-      <button class="btn-primary" onclick="openNewEvent()">+ ???쇱젙 ?깅줉</button>
+      <button class="btn-primary" onclick="openNewEvent()">+ 새 일정 등록</button>
     </div>
     <div class="card" style="padding:0">
       <table class="event-table" id="admin-event-table"></table>
     </div>
 
     <div class="card">
-      <h3>李멸???愿由?<small>移댄넚?먯꽌 李몄꽍???щ엺???ш린??湲곕줉?섏꽭??/small></h3>
+      <h3>참가자 관리 <small>카톡에서 참석한 사람을 여기에 기록하세요</small></h3>
       <div class="form-row">
-        <label>?쇱젙 ?좏깮</label>
+        <label>일정 선택</label>
         <select id="rsvp-event" class="gym-select" style="width:100%" onchange="renderRsvpList()"></select>
       </div>
-      <input type="text" id="rsvp-search" class="gym-select" style="width:100%;margin-bottom:8px;" placeholder="硫ㅻ쾭 寃?? oninput="renderRsvpList()">
+      <input type="text" id="rsvp-search" class="gym-select" style="width:100%;margin-bottom:8px;" placeholder="멤버 검색" oninput="renderRsvpList()">
       <ol id="rsvp-member-list" style="list-style:none"></ol>
     </div>
 
     <div class="rank-cards" style="margin-top:20px">
       <div class="card" style="margin-bottom:0">
-        <h3>?대━??湲곕줉 ?낅젰</h3>
+        <h3>클리어 기록 입력</h3>
         <div class="form-row">
-          <label>硫ㅻ쾭 <small style="color:#9ca3af;font-weight:normal">(?대쫫 寃??</small></label>
+          <label>멤버 <small style="color:#9ca3af;font-weight:normal">(이름 검색)</small></label>
           <div style="position:relative">
-            <input type="text" id="cf-member-search" placeholder="?대쫫 ?낅젰..." autocomplete="off" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;">
+            <input type="text" id="cf-member-search" placeholder="이름 입력..." autocomplete="off" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;">
             <div id="cf-member-results" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;max-height:200px;overflow-y:auto;z-index:30;box-shadow:0 4px 12px rgba(0,0,0,.08);"></div>
           </div>
           <input type="hidden" id="cf-member">
         </div>
         <div class="form-cols">
           <div class="form-row">
-            <label>泥댁씤</label>
+            <label>체인</label>
             <select id="cf-chain" class="gym-select"></select>
           </div>
           <div class="form-row">
-            <label>吏??/label>
+            <label>지점</label>
             <select id="cf-gym" class="gym-select"></select>
           </div>
         </div>
         <div class="form-cols">
           <div class="form-row">
-            <label>?깃툒</label>
+            <label>등급</label>
             <select id="cf-grade" class="gym-select"></select>
           </div>
           <div class="form-row">
-            <label>?좎쭨</label>
+            <label>날짜</label>
             <input type="date" id="cf-date">
           </div>
         </div>
         <div class="form-cols">
           <div class="form-row">
-            <label>媛쒖닔</label>
+            <label>개수</label>
             <input type="number" id="cf-count" min="1" value="1">
           </div>
           <div class="form-row" style="display:flex;align-items:flex-end">
-            <button class="btn-primary" style="width:100%" id="clear-submit">湲곕줉 異붽?</button>
+            <button class="btn-primary" style="width:100%" id="clear-submit">기록 추가</button>
           </div>
         </div>
       </div>
       <div class="card" style="margin-bottom:0">
-        <h3>硫ㅻ쾭 愿由?/h3>
+        <h3>멤버 관리</h3>
         <div class="form-cols">
           <div class="form-row" style="flex:2">
-            <input type="text" id="member-name-input" placeholder="硫ㅻ쾭 ?대쫫" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;">
+            <input type="text" id="member-name-input" placeholder="멤버 이름" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;">
           </div>
           <div class="form-row" style="flex:1;display:flex;align-items:flex-end">
-            <button class="btn-primary" style="width:100%" id="member-add-btn">異붽?</button>
+            <button class="btn-primary" style="width:100%" id="member-add-btn">추가</button>
           </div>
         </div>
         <ol id="member-list" style="list-style:none"></ol>
@@ -186,7 +186,7 @@
     </div>
 
     <div class="card">
-      <h3>理쒓렐 ?대━??湲곕줉 <small>理쒕? 8嫄?/small></h3>
+      <h3>최근 클리어 기록 <small>최대 8건</small></h3>
       <table class="event-table" id="recent-clears-body"></table>
     </div>
   </section>
@@ -201,60 +201,65 @@
       <h4 id="md-att-count"></h4>
       <div id="md-attendees"></div>
     </div>
-    <button class="btn-close" onclick="closeModal('modal-detail')">?リ린</button>
+    <button class="btn-close" onclick="closeModal('modal-detail')">닫기</button>
   </div>
 </div>
 
 <div class="modal-backdrop" id="modal-new">
   <div class="modal">
-    <h3><span id="mn-title-text">?쇱젙 ?깅줉</span> <span class="admin-chip" style="margin-left:6px">愿由ъ옄 ?꾩슜</span></h3>
-    <div class="meta">?깅줉?섎㈃ 紐⑤뱺 硫ㅻ쾭???щ젰??諛붾줈 ?쒖떆?⑸땲??/div>
+    <h3><span id="mn-title-text">일정 등록</span> <span class="admin-chip" style="margin-left:6px">관리자 전용</span></h3>
+    <div class="meta">등록하면 모든 멤버의 달력에 바로 표시됩니다</div>
     <div class="form-row">
-      <label>?쒕ぉ</label>
-      <input type="text" id="nf-title" placeholder="?? ?뷀겢?쇱엫 臾몃옒???뺢린 紐⑥엫">
+      <label>제목</label>
+      <input type="text" id="nf-title" placeholder="예: 더클라임 문래점 정기 모임">
     </div>
     <div class="form-cols">
       <div class="form-row">
-        <label>泥댁씤</label>
+        <label>체인</label>
         <select id="nf-chain"></select>
       </div>
-      <div class="form-row">
-        <label>吏??/label>
+      <div class="form-row" id="nf-gym-row">
+        <label>지점</label>
         <select id="nf-gym"></select>
       </div>
     </div>
+    <div class="form-row" id="nf-gym-custom-row" style="display:none">
+      <label>암장 이름 직접 입력</label>
+      <input type="text" id="nf-gym-custom" placeholder="예: 클라이밍짐 OO점">
+    </div>
     <div class="form-cols">
       <div class="form-row">
-        <label>?좎쭨</label>
+        <label>날짜</label>
         <input type="date" id="nf-date">
       </div>
       <div class="form-row">
-        <label>?쒓컙</label>
+        <label>시간</label>
         <input type="time" id="nf-time" value="19:00">
       </div>
     </div>
     <div class="form-row">
-      <label>硫붾え</label>
-      <textarea rows="2" id="nf-memo" placeholder="?명똿 ?붿씪, 紐⑺몴 ?깃툒 ???먯쑀濡?쾶"></textarea>
+      <label>메모</label>
+      <textarea rows="2" id="nf-memo" placeholder="세팅 요일, 목표 등급 등 자유롭게"></textarea>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-join" id="save-event-btn">???/button>
-      <button class="btn btn-out" onclick="closeModal('modal-new')">痍⑥냼</button>
+      <button class="btn btn-join" id="save-event-btn">저장</button>
+      <button class="btn btn-out" onclick="closeModal('modal-new')">취소</button>
     </div>
   </div>
 </div>
 
 <footer>
-  踰꾧렇쨌臾몄쓽: <a href="https://open.kakao.com/o/sqg0FWgi" target="_blank" rel="noopener">?대떦??移댄넚</a>
-  &middot; ?대씪???꾨젋利???쒕낫??</footer>
+  버그·문의: <a href="https://open.kakao.com/o/sqg0FWgi" target="_blank" rel="noopener">담당자 카톡</a>
+  &middot; 클라임 프렌즈 대시보드
+</footer>
 
 <nav class="mobile-tabs">
-  <button data-tab="calendar" class="active">?щ젰</button>
-  <button data-tab="ranking">??궧</button>
-  <button data-tab="food">留쏆쭛</button>
-  <button data-tab="admin" class="admin-only">愿由?/button>
+  <button data-tab="calendar" class="active">달력</button>
+  <button data-tab="ranking">랭킹</button>
+  <button data-tab="food">맛집</button>
+  <button data-tab="admin" class="admin-only">관리</button>
 </nav>
 
-<script src="/static/app.js?v=20260827b"></script>
+<script src="/static/app.js?v=20260827c"></script>
 </body>
 </html>

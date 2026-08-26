@@ -97,5 +97,8 @@ def init_db():
             conn.commit()
         if conn.execute("SELECT COUNT(*) AS n FROM chains").fetchone()["n"] == 0:
             seed(conn)
+        if not conn.execute("SELECT 1 FROM chains WHERE name='기타'").fetchone():
+            conn.execute("INSERT INTO chains(name) VALUES ('기타')")
+            conn.commit()
     finally:
         conn.close()

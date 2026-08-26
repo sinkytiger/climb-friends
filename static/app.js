@@ -238,9 +238,24 @@ function bindDependentSelects(chainSelId, gymSelId, gradeSelId) {
       const gradeSel = document.getElementById(gradeSelId);
       gradeSel.innerHTML = gradeSelectOptions(Number(chainSel.value));
     }
+    if (chainSelId === "nf-chain") toggleCustomGymInput();
   };
   chainSel.addEventListener("change", update);
   update();
+}
+
+function isEtcChainSelected() {
+  const idx = Number(document.getElementById("nf-chain").value);
+  const chain = BOOT.chains[idx];
+  return chain && (chain.name === "기타" || chain.gyms.length === 0);
+}
+
+function toggleCustomGymInput() {
+  const etc = isEtcChainSelected();
+  const gymRow = document.getElementById("nf-gym-row");
+  const customRow = document.getElementById("nf-gym-custom-row");
+  if (gymRow) gymRow.style.display = etc ? "none" : "";
+  if (customRow) customRow.style.display = etc ? "" : "none";
 }
 
 async function loadAdminData() {
@@ -363,8 +378,23 @@ async function deleteEvent(id) {
 
 async function saveEvent() {
   const chainIdx = Number(document.getElementById("nf-chain").value);
-  const gyms = BOOT.chains[chainIdx].gyms;
-  const gymId = Number(document.getElementById("nf-gym").value) || (gyms[0] && gyms[0].id);
+  const chain = BOOT.chains[chainIdx];
+  let gymId;
+  if (isEtcChainSelected()) {
+    const customName = document.getElementById("nf-gym-custom").value.trim();
+    if (!customName) { alert("암장 이름을 입력하세요"); return; }
+    try {
+      const res = await adminApi("/api/gyms", {
+        method: "POST",
+        body: JSON.stringify({ chain_id: chain.id, name: customName })
+      });
+      gymId = res.id;
+      BOOT = await api("/api/bootstrap");
+    } catch (e) { alert(e.message); return; }
+  } else {
+    const gyms = chain.gyms;
+    gymId = Number(document.getElementById("nf-gym").value) || (gyms[0] && gyms[0].id);
+  }
   const payload = {
     title: document.getElementById("nf-title").value.trim(),
     gym_id: gymId,
@@ -381,6 +411,7 @@ async function saveEvent() {
     }
     closeModal("modal-new");
     editingEventId = null;
+    document.getElementById("nf-gym-custom").value = "";
     await loadMonth();
     await loadAdminData();
   } catch (e) { alert(e.message); }
