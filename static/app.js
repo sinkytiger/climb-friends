@@ -284,12 +284,15 @@ async function loadAdminData() {
             </td>
           </tr>`).join("");
     }
-    await renderRecentClears();
-    await refreshMembers();
     const rsel = document.getElementById("rsvp-event");
     rsel.innerHTML = ups.events.map(e =>
       `<option value="${e.id}">${esc(e.event_date.slice(5))} ${esc(e.title || e.gym_name)}</option>`).join("");
     await renderRsvpList();
+  } catch (e) {}
+  try {
+    await refreshMembers();
+    renderMemberList();
+    await renderRecentClears();
   } catch (e) {}
 }
 
