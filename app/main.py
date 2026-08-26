@@ -1,5 +1,6 @@
 """클라임 프렌즈 대시보드 API 서버"""
 from datetime import date, datetime, timedelta
+from typing import Optional
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -373,7 +374,7 @@ def _period_params(period: str):
 
 
 @app.get("/api/rankings/clears")
-def rank_clears(period: str = "all", chain_id: int | None = None):
+def rank_clears(period: str = "all", chain_id: Optional[int] = None):
     cond, params = _period_params(period)
     chain_cond, chain_params = (" AND g.chain_id=? ", [chain_id]) if chain_id else (" ", [])
     conn = get_conn()
