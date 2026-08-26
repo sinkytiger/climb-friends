@@ -235,6 +235,21 @@ table.event-table .btn-mini.del:hover { background: #fef2f2; }
 .search-item.empty { color: #9ca3af; cursor: default; }
 .search-item:hover.empty { background: #fff; }
 
+#member-list {
+  max-height: 360px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+#admin-event-table,
+#recent-clears-body {
+  display: block;
+  max-height: 300px;
+  overflow-y: auto;
+}
+#admin-event-table tr, #recent-clears-body tr { display: table; width: 100%; table-layout: fixed; }
+
 .banner {
   display: flex; align-items: center; justify-content: center;
   gap: 12px;
