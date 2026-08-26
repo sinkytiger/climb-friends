@@ -497,6 +497,85 @@ function pickMember(id, el) {
   document.getElementById("cf-member-results").style.display = "none";
 }
 
+/* ---------- 세팅 일정 ---------- */
+const SETTING_SCHEDULE = {
+  "월": [
+    ["더클라임", "신림 · 성수 · 논현"],
+    ["서울숲", "영등포"],
+    ["손상원", "강남"],
+    ["알레", "강동"],
+    ["담장클라이밍", "신촌"],
+    ["서볼", "선유"],
+    ["페퍼", "원흥"],
+    ["비블럭", "영종"],
+    ["피커스", "종로"],
+    ["크래커", "상봉"],
+    ["스톤즈", "낙성대 (격주)"]
+  ],
+  "화": [
+    ["더클라임", "마곡 · 신림 · 사당 · 이수"],
+    ["클라이밍파크", "신논현 · 종로"],
+    ["서울숲", "구로 · 잠실"],
+    ["담장클라이밍", "을지로"],
+    ["허브", "논현 (격주)"],
+    ["웨락", "부산대"],
+    ["어윀", "대전"],
+    ["온플릭", "천호"],
+    ["옾더월", "이태원"]
+  ],
+  "수": [
+    ["더클라임", "연남 · 강남"],
+    ["서울숲", "구로 · 종로"],
+    ["알레", "혜화"],
+    ["서볼", "목동"],
+    ["웨락", "서면"],
+    ["온플릭", "천호"],
+    ["피커스", "구로"],
+    ["손상원", "을지로"]
+  ],
+  "목": [
+    ["더클라임", "연남 · 문래"],
+    ["서울숲", "영등포 · 종로"],
+    ["클라이밍파크", "강남"],
+    ["피크닉", "수원"]
+  ],
+  "금": [
+    ["더클라임", "문래 · 양재"],
+    ["스파이시", "금정"],
+    ["피커스", "신촌 (격주)"],
+    ["코알라", "킨텍스"],
+    ["손상원", "판교"]
+  ]
+};
+
+const SETTING_DAYS = ["월", "화", "수", "목", "금"];
+let settingDay = null;
+
+function todayWeekday() {
+  const d = new Date().getDay();
+  return (d >= 1 && d <= 5) ? SETTING_DAYS[d - 1] : null;
+}
+
+function renderSettingCard() {
+  const today = todayWeekday();
+  if (!settingDay) settingDay = today || "월";
+  document.getElementById("setting-today").innerHTML =
+    today ? `<span class="today-badge">오늘 ${today}요일</span>` : "주말";
+  document.getElementById("setting-days").innerHTML = SETTING_DAYS.map(d =>
+    `<button class="${d === settingDay ? "active" : ""}" onclick="selectSettingDay('${d}')">${d}</button>`
+  ).join("");
+  document.getElementById("setting-list").innerHTML =
+    (SETTING_SCHEDULE[settingDay] || []).map(([gym, branch]) =>
+      `<li><span class="gdot" style="background:${chainHex(gym)};border-color:${chainHex(gym)}"></span>
+        <span><span class="set-gym">${esc(gym)}</span> <span class="set-branch">${esc(branch)}</span></span></li>`
+    ).join("");
+}
+
+function selectSettingDay(d) {
+  settingDay = d;
+  renderSettingCard();
+}
+
 /* ---------- 맛집 지도 ---------- */
 const GYM_LOC = {
   "더클라임|문래점": [37.5178, 126.8864],
@@ -655,6 +734,7 @@ async function init() {
   fillEventFormSelects();
   setupMemberSearch();
   buildFoodControls();
+  renderSettingCard();
 
   await loadMonth();
   await loadRankings();
