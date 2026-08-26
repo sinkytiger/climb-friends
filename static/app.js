@@ -1,6 +1,8 @@
 let BOOT = { chains: [], members: [] };
 let calY, calM;
 const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+const ADMIN_URL_PARAM = new URLSearchParams(location.search).has("admin") || location.hash === "#admin";
+const isAdminUI = IS_LOCAL || ADMIN_URL_PARAM;
 let adminKey = localStorage.getItem("cfAdminKey") || "";
 let editingEventId = null;
 let currentDetailId = null;
@@ -35,6 +37,7 @@ async function api(path, opts = {}) {
 }
 
 async function adminApi(path, opts = {}) {
+  if (!isAdminUI) throw new Error("관리 권한이 없습니다");
   if (!IS_LOCAL && !adminKey) {
     const k = prompt("관리자 키를 입력하세요");
     if (k === null) throw new Error("관리자 권한이 필요합니다");
@@ -610,7 +613,7 @@ function fillEventFormSelects() {
 }
 
 async function init() {
-  if (!IS_LOCAL) {
+  if (!isAdminUI) {
     document.querySelectorAll(".admin-only").forEach(b => b.style.display = "none");
     const gb = document.getElementById("btn-goto-admin");
     const gt = document.getElementById("tag-goto-admin");
