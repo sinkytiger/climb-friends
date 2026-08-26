@@ -43,8 +43,8 @@ main { max-width: 1240px; margin: 0 auto; padding: 24px 20px; }
 
 .cal-layout { display: grid; grid-template-columns: 215px 1fr 265px; gap: 16px; align-items: start; }
 
-.setting-days { display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: 10px; width: 100%; }
-.setting-days button { padding: 6px 10px; font-size: 12px; flex: 1; }
+.setting-days { display: flex; flex-wrap: nowrap; gap: 2px; margin-bottom: 10px; width: 100%; }
+.setting-days button { padding: 6px 0; font-size: 12px; flex: 1 1 0; min-width: 0; text-align: center; }
 #setting-list { list-style: none; }
 #setting-list li {
   display: flex; align-items: flex-start; gap: 6px;
