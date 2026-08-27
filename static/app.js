@@ -195,9 +195,11 @@ function selectChain(i) {
 
 function rankListHtml(rows, valKey) {
   if (!rows.length) return '<li><span class="empty-note">아직 데이터가 없습니다</span></li>';
+  const topVal = rows[0][valKey];
   return rows.map((r, i) => {
-    const cls = i === 0 ? "r1" : i === 1 ? "r2" : i === 2 ? "r3" : "";
-    const crown = i === 0 ? ' 👑' : '';
+    const isTop = r[valKey] === topVal;
+    const cls = isTop ? "r1" : i === 1 ? "r2" : i === 2 ? "r3" : "";
+    const crown = isTop ? ' 👑' : '';
     return `<li><span class="rank-num ${cls}">${i + 1}</span><span class="name">${esc(r.name)}${crown}</span><span class="val">${r[valKey]}${valKey === "cnt" ? "회" : "개"}</span></li>`;
   }).join("");
 }
@@ -223,8 +225,9 @@ async function loadRankings() {
     document.getElementById("rank-att-list").innerHTML = rankListHtml(att.rows, "cnt");
     document.getElementById("rank-att-side").innerHTML =
       att.rows.length ? att.rows.slice(0, 5).map((r, i) => {
-        const cls = i === 0 ? "r1" : i === 1 ? "r2" : i === 2 ? "r3" : "";
-        const crown = i === 0 ? ' 👑' : '';
+        const isTop = i === 0 || r.cnt === att.rows[0].cnt;
+        const cls = isTop ? "r1" : i === 1 ? "r2" : i === 2 ? "r3" : "";
+        const crown = isTop ? ' 👑' : '';
         return `<li><span class="rank-num ${cls}">${i + 1}</span><span class="name">${esc(r.name)}${crown}</span><span class="val">${r.cnt}회</span></li>`;
       }).join("") : '<li><span class="empty-note">데이터 없음</span></li>';
     await renderGradeTable();
@@ -249,10 +252,13 @@ async function renderGradeTable() {
     head += `</tr>`;
     let body = "";
     if (!data.rows.length) body = `<tr><td colspan="${order.length + 2}"><span class="empty-note">아직 기록이 없습니다</span></td></tr>`;
+    const topCounts = data.rows[0] ? JSON.stringify(data.rows[0].counts) : "";
     data.rows.forEach((r, ri) => {
-      const cls = ri === 0 ? "r1" : ri === 1 ? "r2" : ri === 2 ? "r3" : "";
+      const isTop = ri === 0 || JSON.stringify(r.counts) === topCounts;
+      const cls = isTop ? "r1" : ri === 1 ? "r2" : ri === 2 ? "r3" : "";
+      const crown = isTop ? ' 👑' : '';
       body += `<tr><td><span class="rank-num ${cls}">${ri + 1}</span></td>
-               <td><span class="g-name">${esc(r.name)}</span></td>`;
+               <td><span class="g-name">${esc(r.name)}${crown}</span></td>`;
       order.forEach(gi => { body += `<td>${r.counts[gi]}</td>`; });
       body += `</tr>`;
     });
