@@ -1,9 +1,12 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
-  background: #fff;
+  background: #f9fafb;
   color: #1f2937;
   padding-bottom: 70px;
+  font-size: 14px;
+  line-height: 1.6;
+  letter-spacing: -0.15px;
 }
 header {
   background: #fff;
@@ -74,17 +77,19 @@ main { max-width: 1240px; margin: 0 auto; padding: 24px 20px; }
 .dow.sun { color: #dc2626; } .dow.sat { color: #2563eb; }
 .day {
   background: #fff; border-radius: 10px; height: 108px;
-  padding: 6px; border: 1px solid #e5e7eb; overflow: hidden;
-  display: flex; flex-direction: column;
+  padding: 7px; border: 1px solid #e5e7eb; overflow: hidden;
+  display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
-.day.empty { border: none; }
-.day .num { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
-.day.today { border: 2px solid #ea580c; background: #fff7ed; }
-.day.today .num { color: #ea580c; font-weight: bold; }
+.day.empty { border: none; box-shadow: none; }
+.day .num { font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 5px; }
+.day.today { border: 2px solid #ea580c; background: #fff7ed; box-shadow: 0 2px 8px rgba(234,88,12,0.15); }
+.day.today .num { color: #c2410c; font-weight: 800; }
 .chip {
   display: block; width: 100%; text-align: left; border: none; cursor: pointer;
-  font-size: 11px; padding: 3px 6px; border-radius: 6px; margin-bottom: 3px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.15px;
+  padding: 4px 6px; border-radius: 6px; margin-bottom: 3px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
 }
 .c-climb { background: #ea580c; }
 .c-seoul { background: #059669; }
@@ -98,7 +103,7 @@ main { max-width: 1240px; margin: 0 auto; padding: 24px 20px; }
 .c-cracker { background: #db2777; }
 .c-other { background: #6b7280; }
 
-.side-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.side-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
 .side-card h3 { font-size: 14px; margin-bottom: 10px; }
 .side-card h3 small { color: #9ca3af; font-weight: normal; }
 .side-card ol { list-style: none; }
@@ -139,8 +144,8 @@ main { max-width: 1240px; margin: 0 auto; padding: 24px 20px; }
 .chipbtn .gdot { width: 8px; height: 8px; }
 
 .rank-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-.card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 18px; margin-bottom: 16px; }
-.card h3 { font-size: 15px; margin-bottom: 12px; }
+.card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 18px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.card h3 { font-size: 15px; font-weight: 700; margin-bottom: 14px; letter-spacing: -0.2px; }
 .card h3 small { color: #9ca3af; font-weight: normal; margin-left: 6px; }
 .card ol { list-style: none; }
 .card li { display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px solid #f9fafb; font-size: 14px; }
@@ -149,6 +154,7 @@ main { max-width: 1240px; margin: 0 auto; padding: 24px 20px; }
 .empty-note { font-size: 13px; color: #9ca3af; padding: 8px 2px; }
 
 table.grade-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.grade-table tbody tr:nth-child(even) td { background: #f9fafb; }
 table.grade-table th {
   text-align: center; padding: 9px 6px; background: #f9fafb;
   border-bottom: 2px solid #e5e7eb; font-size: 12px; color: #4b5563; white-space: nowrap;
@@ -158,6 +164,10 @@ table.grade-table td { padding: 10px 6px; text-align: center; border-bottom: 1px
 table.grade-table tr:last-child td { border-bottom: none; }
 table.grade-table .g-name { display: flex; align-items: center; gap: 8px; }
 .grade-table-wrap { overflow-x: auto; }
+
+.chain-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; padding: 10px 12px; background: #f9fafb; border-radius: 8px; border: 1px solid #f3f4f6; }
+.legend-item { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #4b5563; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
 .food-layout { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
 #map { height: 500px; border: 1px solid #e5e7eb; border-radius: 12px; z-index: 1; }

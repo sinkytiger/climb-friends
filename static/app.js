@@ -175,6 +175,15 @@ function renderChainChips() {
     `<button class="chipbtn ${i === selectedChainIdx ? "active" : ""}" onclick="selectChain(${i})">
        <span class="gdot" style="background:${chainHex(c.name)};border-color:${chainHex(c.name)}"></span>${esc(c.name)}
      </button>`).join("");
+  renderChainLegend();
+}
+
+function renderChainLegend() {
+  const el = document.getElementById("chain-legend");
+  if (!el || !BOOT.chains.length) return;
+  el.innerHTML = BOOT.chains.map(c =>
+    `<span class="legend-item"><span class="legend-dot" style="background:${chainHex(c.name)}"></span>${esc(c.name)}</span>`
+  ).join("");
 }
 
 function selectChain(i) {
