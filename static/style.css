@@ -57,6 +57,15 @@ main { max-width: 1240px; margin: 0 auto; padding: 24px 20px; }
 .set-gym { font-weight: bold; color: #111827; white-space: nowrap; }
 .set-branch { color: #6b7280; }
 .today-badge { color: #ea580c; font-weight: bold; }
+.crew-card h3 { color: #111827; }
+.crew-card ul { list-style: none; }
+.crew-card li {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 0; font-size: 13px; border-bottom: 1px solid #f9fafb;
+}
+.crew-card li:last-child { border-bottom: none; }
+.crew-card li span { width: 22px; text-align: center; }
+.crew-card p { color: #9ca3af; font-size: 11px; margin-top: 10px; line-height: 1.5; }
 .cal-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
 .cal-head h2 { font-size: 20px; }
 .nav-btn {
