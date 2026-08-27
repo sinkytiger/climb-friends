@@ -188,11 +188,23 @@ function rankListHtml(rows, valKey) {
   if (!rows.length) return '<li><span class="empty-note">아직 데이터가 없습니다</span></li>';
   return rows.map((r, i) => {
     const cls = i === 0 ? "r1" : i === 1 ? "r2" : i === 2 ? "r3" : "";
-    return `<li><span class="rank-num ${cls}">${i + 1}</span><span class="name">${esc(r.name)}</span><span class="val">${r[valKey]}${valKey === "cnt" ? "회" : "개"}</span></li>`;
+    const crown = i === 0 ? ' 👑' : '';
+    return `<li><span class="rank-num ${cls}">${i + 1}</span><span class="name">${esc(r.name)}${crown}</span><span class="val">${r[valKey]}${valKey === "cnt" ? "회" : "개"}</span></li>`;
   }).join("");
 }
 
+function updateQuarterLabel() {
+  const el = document.getElementById("quarter-label");
+  if (!el) return;
+  if (rankPeriod !== "quarter") { el.textContent = ""; return; }
+  const now = new Date();
+  const q = Math.floor((now.getMonth()) / 3) + 1;
+  const ranges = { 1: "1월~3월", 2: "4월~6월", 3: "7월~9월", 4: "10월~12월" };
+  el.textContent = `${now.getFullYear()}년 ${q}분기 (${ranges[q]})`;
+}
+
 async function loadRankings() {
+  updateQuarterLabel();
   const c = BOOT.chains[selectedChainIdx];
   try {
     const clears = await api(`/api/rankings/clears?period=${rankPeriod}&chain_id=${c.id}`);
@@ -203,7 +215,8 @@ async function loadRankings() {
     document.getElementById("rank-att-side").innerHTML =
       att.rows.length ? att.rows.slice(0, 5).map((r, i) => {
         const cls = i === 0 ? "r1" : i === 1 ? "r2" : i === 2 ? "r3" : "";
-        return `<li><span class="rank-num ${cls}">${i + 1}</span><span class="name">${esc(r.name)}</span><span class="val">${r.cnt}회</span></li>`;
+        const crown = i === 0 ? ' 👑' : '';
+        return `<li><span class="rank-num ${cls}">${i + 1}</span><span class="name">${esc(r.name)}${crown}</span><span class="val">${r.cnt}회</span></li>`;
       }).join("") : '<li><span class="empty-note">데이터 없음</span></li>';
     await renderGradeTable();
   } catch (e) {}
@@ -1006,6 +1019,7 @@ async function init() {
       rankPeriod = b.dataset.period;
       document.querySelectorAll("#seg-period button").forEach(x => x.classList.remove("active"));
       b.classList.add("active");
+      updateQuarterLabel();
       loadRankings();
     });
   });
