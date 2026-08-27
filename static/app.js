@@ -489,14 +489,17 @@ async function saveEvent() {
 }
 
 async function submitClear() {
+  const eventId = document.getElementById("cf-event").value ? Number(document.getElementById("cf-event").value) : null;
   const payload = {
     member_id: Number(document.getElementById("cf-member").value),
     gym_id: Number(document.getElementById("cf-gym").value),
     grade_level: Number(document.getElementById("cf-grade").value),
     log_date: document.getElementById("cf-date").value || todayStr(),
-    count: Number(document.getElementById("cf-count").value)
+    count: Number(document.getElementById("cf-count").value),
+    event_id: eventId
   };
-  if (!payload.member_id || !payload.gym_id || !payload.count) { alert("멤버를 검색해서 선택하고, 지점/개수도 확인하세요"); return; }
+  if (!payload.member_id || !payload.count) { alert("멤버를 검색해서 선택하고, 개수도 확인하세요"); return; }
+  if (!eventId && !payload.gym_id) { alert("연계 일정을 선택하거나 지점을 선택하세요"); return; }
   try {
     await adminApi("/api/clears", { method: "POST", body: JSON.stringify(payload) });
     alert("기록이 저장되었습니다");
@@ -514,15 +517,55 @@ async function renderRecentClears() {
       t.innerHTML = '<tr><td><span class="empty-note">아직 기록이 없습니다</span></td></tr>';
       return;
     }
-    t.innerHTML = `<tr><th>날짜</th><th>멤버</th><th>체인/지점</th><th>등급</th><th>개수</th></tr>` +
+    t.innerHTML = `<tr><th>날짜</th><th>멤버</th><th>체인/지점</th><th>등급</th><th>개수</th><th>연계 일정</th></tr>` +
       data.logs.map(l => {
         const chain = BOOT.chains.find(c => c.name === l.chain_name);
         const gradeName = chain ? (chain.grades.find(g => g.level === l.grade_level) || {}).name || l.grade_level : l.grade_level;
+        const eventTag = l.event_title ? `<span style="font-size:11px;color:#6b7280" title="${esc(l.event_title)}">${esc(l.event_title.slice(0, 12))}</span>` : '<span style="font-size:11px;color:#d1d5db">-</span>';
         return `<tr><td>${esc(l.log_date)}</td><td>${esc(l.member_name)}</td>
           <td><span class="badge ${chainCls(l.chain_name)}">${esc(l.chain_name)}</span> ${esc(l.gym_name)}</td>
-          <td>${esc(String(gradeName))}</td><td class="val">${l.count}개</td></tr>`;
+          <td>${esc(String(gradeName))}</td><td class="val">${l.count}개</td><td>${eventTag}</td></tr>`;
       }).join("");
   } catch (e) {}
+}
+
+let _clearEvents = [];
+async function loadClearEvents() {
+  try {
+    const data = await api("/api/events/all?limit=50");
+    _clearEvents = data.events;
+    const sel = document.getElementById("cf-event");
+    if (!sel) return;
+    sel.innerHTML = '<option value="">선택 안 함 (직접 입력)</option>' +
+      _clearEvents.map(e => `<option value="${e.id}">${esc(e.event_date)} ${esc(e.title || e.gym_name)} (${esc(e.chain_name)} ${esc(e.gym_name)})</option>`).join("");
+  } catch (e) {}
+}
+
+function onClearEventChange() {
+  const sel = document.getElementById("cf-event");
+  const val = sel.value;
+  const chainSel = document.getElementById("cf-chain");
+  const gymSel = document.getElementById("cf-gym");
+  const dateInput = document.getElementById("cf-date");
+  if (val) {
+    const ev = _clearEvents.find(x => String(x.id) === val);
+    if (ev) {
+      const idx = BOOT.chains.findIndex(c => c.id === ev.chain_id);
+      if (idx >= 0) {
+        chainSel.value = String(idx);
+        chainSel.dispatchEvent(new Event("change"));
+        setTimeout(() => { gymSel.value = String(ev.gym_id); }, 0);
+      }
+      dateInput.value = ev.event_date;
+      chainSel.disabled = true;
+      gymSel.disabled = true;
+      dateInput.disabled = true;
+    }
+  } else {
+    chainSel.disabled = false;
+    gymSel.disabled = false;
+    dateInput.disabled = false;
+  }
 }
 
 async function addMember() {
@@ -1073,6 +1116,10 @@ async function init() {
   buildFoodControls();
   renderBirthdayAdminCard();
   renderSettingCard();
+  await loadRestaurants();
+  await loadClearEvents();
+  const cfEventSel = document.getElementById("cf-event");
+  if (cfEventSel) cfEventSel.addEventListener("change", onClearEventChange);
   await loadBanner();
 
   await loadMonth();

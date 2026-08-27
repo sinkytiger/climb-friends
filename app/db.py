@@ -54,7 +54,8 @@ CREATE TABLE IF NOT EXISTS clear_logs (
     gym_id INTEGER NOT NULL REFERENCES gyms(id) ON DELETE CASCADE,
     grade_level INTEGER NOT NULL,
     log_date TEXT NOT NULL,
-    count INTEGER NOT NULL
+    count INTEGER NOT NULL,
+    event_id INTEGER REFERENCES events(id) ON DELETE SET NULL
 );
 CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
@@ -151,6 +152,10 @@ def init_db():
             conn.commit()
         if "birth_date" not in cols:
             conn.execute("ALTER TABLE members ADD COLUMN birth_date TEXT")
+            conn.commit()
+        cols_c = [r["name"] for r in conn.execute("PRAGMA table_info(clear_logs)")]
+        if "event_id" not in cols_c:
+            conn.execute("ALTER TABLE clear_logs ADD COLUMN event_id INTEGER REFERENCES events(id) ON DELETE SET NULL")
             conn.commit()
         if conn.execute("SELECT COUNT(*) AS n FROM chains").fetchone()["n"] == 0:
             seed(conn)

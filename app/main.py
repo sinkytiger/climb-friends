@@ -91,10 +91,11 @@ class RestaurantIn(BaseModel):
 
 class ClearIn(BaseModel):
     member_id: int
-    gym_id: int
+    gym_id: Optional[int] = None
     grade_level: int
-    log_date: str
+    log_date: Optional[str] = None
     count: int
+    event_id: Optional[int] = None
 
 
 def period_range(period: str):
@@ -191,7 +192,7 @@ def upcoming_events(limit: int = 50):
     conn = get_conn()
     rows = conn.execute(
         """
-        SELECT e.id, e.title, e.event_date, e.start_time, e.gym_id,
+        SELECT e.id, e.title, e.event_date, e.start_time,
                g.name AS gym_name, c.name AS chain_name
         FROM events e
         JOIN gyms g ON g.id = e.gym_id
@@ -212,6 +213,24 @@ def upcoming_events(limit: int = 50):
         d["attendees"] = n
         out.append(d)
     return {"events": out}
+
+
+@app.get("/api/events/all")
+def all_events(limit: int = 100):
+    conn = get_conn()
+    rows = conn.execute(
+        """
+        SELECT e.id, e.title, e.event_date, e.start_time,
+               g.id AS gym_id, g.name AS gym_name, c.id AS chain_id, c.name AS chain_name
+        FROM events e
+        JOIN gyms g ON g.id = e.gym_id
+        JOIN chains c ON c.id = g.chain_id
+        ORDER BY e.event_date DESC, e.start_time DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+    return {"events": [dict(r) for r in rows]}
 
 
 @app.get("/api/events/{event_id}")
@@ -601,12 +620,26 @@ def set_member_rank(member_id: int, body: RankOptIn):
 
 @app.post("/api/clears", dependencies=[Depends(check_admin)])
 def add_clear(body: ClearIn):
-    if not valid_date(body.log_date):
+    conn = get_conn()
+    event_row = None
+    gym_id = body.gym_id
+    log_date = body.log_date
+    if body.event_id is not None:
+        event_row = conn.execute(
+            "SELECT id, gym_id, event_date FROM events WHERE id=?", (body.event_id,)
+        ).fetchone()
+        if not event_row:
+            raise HTTPException(status_code=400, detail="일정이 올바르지 않습니다")
+        gym_id = event_row["gym_id"]
+        if not log_date:
+            log_date = event_row["event_date"]
+    if not log_date or not valid_date(log_date):
         raise HTTPException(status_code=400, detail="날짜 형식은 YYYY-MM-DD 입니다")
     if body.count <= 0:
         raise HTTPException(status_code=400, detail="개수는 1 이상이어야 합니다")
-    conn = get_conn()
-    gym = conn.execute("SELECT chain_id FROM gyms WHERE id=?", (body.gym_id,)).fetchone()
+    if not gym_id:
+        raise HTTPException(status_code=400, detail="암장을 선택하세요")
+    gym = conn.execute("SELECT chain_id FROM gyms WHERE id=?", (gym_id,)).fetchone()
     if not gym:
         raise HTTPException(status_code=400, detail="암장이 올바르지 않습니다")
     max_level = conn.execute(
@@ -619,8 +652,8 @@ def add_clear(body: ClearIn):
     if not conn.execute("SELECT 1 FROM members WHERE id=?", (body.member_id,)).fetchone():
         raise HTTPException(status_code=400, detail="멤버가 올바르지 않습니다")
     conn.execute(
-        "INSERT INTO clear_logs(member_id, gym_id, grade_level, log_date, count) VALUES (?, ?, ?, ?, ?)",
-        (body.member_id, body.gym_id, body.grade_level, body.log_date, body.count),
+        "INSERT INTO clear_logs(member_id, gym_id, grade_level, log_date, count, event_id) VALUES (?, ?, ?, ?, ?, ?)",
+        (body.member_id, gym_id, body.grade_level, log_date, body.count, body.event_id),
     )
     conn.commit()
     return {"ok": True}
@@ -631,12 +664,14 @@ def recent_clears(limit: int = 10):
     conn = get_conn()
     rows = conn.execute(
         """
-        SELECT l.id, l.log_date, l.grade_level, l.count,
-               m.name AS member_name, g.name AS gym_name, c.name AS chain_name
+        SELECT l.id, l.log_date, l.grade_level, l.count, l.event_id,
+               m.name AS member_name, g.name AS gym_name, c.name AS chain_name,
+               e.title AS event_title
         FROM clear_logs l
         JOIN members m ON m.id = l.member_id
         JOIN gyms g ON g.id = l.gym_id
         JOIN chains c ON c.id = g.chain_id
+        LEFT JOIN events e ON e.id = l.event_id
         ORDER BY l.id DESC LIMIT ?
         """,
         (limit,),
