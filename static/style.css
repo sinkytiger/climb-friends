@@ -256,6 +256,13 @@ table.event-table .btn-mini.del:hover { background: #fef2f2; }
   border-radius: 8px;
   padding: 4px 8px;
 }
+#rsvp-member-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 4px 8px;
+}
 #admin-event-table,
 #recent-clears-body {
   display: block;
