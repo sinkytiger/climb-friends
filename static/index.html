@@ -6,7 +6,7 @@
 <title>클라임 프렌즈 대시보드</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="/static/style.css?v=20260827p">
+<link rel="stylesheet" href="/static/style.css?v=20260827q">
 </head>
 <body>
 
@@ -135,6 +135,7 @@
 
     <div class="card">
       <h3>참가자 관리 <small>카톡에서 참석한 사람을 여기에 기록하세요</small></h3>
+      <input type="text" id="rsvp-event-search" placeholder="일정 검색 (날짜·제목·암장)" style="width:100%;margin-bottom:8px;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;" oninput="filterRsvpEvents()">
       <div class="form-row">
         <label>일정 선택</label>
         <select id="rsvp-event" class="gym-select" style="width:100%" onchange="renderRsvpList()"></select>
@@ -352,6 +353,6 @@
   <button data-tab="admin" class="admin-only">관리</button>
 </nav>
 
-<script src="/static/app.js?v=20260827p"></script>
+<script src="/static/app.js?v=20260827q"></script>
 </body>
 </html>

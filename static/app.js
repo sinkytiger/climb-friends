@@ -299,10 +299,12 @@ function toggleCustomGymInput() {
   if (customRow) customRow.style.display = etc ? "" : "none";
 }
 
+let _adminEvents = [];
 async function loadAdminData() {
   adminLoaded = true;
   try {
     const ups = await adminApi("/api/events/upcoming?limit=50");
+    _adminEvents = ups.events;
     const t = document.getElementById("admin-event-table");
     if (!ups.events.length) {
       t.innerHTML = '<tr><td><span class="empty-note">예정된 일정이 없습니다</span></td></tr>';
@@ -325,16 +327,32 @@ async function loadAdminData() {
             </td>
           </tr>`).join("");
     }
-    const rsel = document.getElementById("rsvp-event");
-    rsel.innerHTML = ups.events.map(e =>
-      `<option value="${e.id}">${esc(e.event_date.slice(5))} ${esc(e.title || e.gym_name)}</option>`).join("");
-    await renderRsvpList();
+    filterRsvpEvents();
   } catch (e) {}
   try {
     await refreshMembers();
     renderMemberList();
     await renderRecentClears();
   } catch (e) {}
+}
+
+function filterRsvpEvents() {
+  const q = (document.getElementById("rsvp-event-search").value || "").trim().toLowerCase();
+  const rsel = document.getElementById("rsvp-event");
+  const filtered = !q ? _adminEvents : _adminEvents.filter(e =>
+    e.event_date.includes(q) ||
+    (e.title && e.title.toLowerCase().includes(q)) ||
+    e.gym_name.toLowerCase().includes(q) ||
+    e.chain_name.toLowerCase().includes(q)
+  );
+  rsel.innerHTML = filtered.map(e =>
+    `<option value="${e.id}">${esc(e.event_date)} ${esc(e.title || e.gym_name)} (${esc(e.chain_name)} ${esc(e.gym_name)})</option>`
+  ).join("");
+  if (filtered.length) {
+    renderRsvpList();
+  } else {
+    document.getElementById("rsvp-member-list").innerHTML = '<li><span class="empty-note">검색된 일정이 없습니다</span></li>';
+  }
 }
 
 async function renderRsvpList() {
