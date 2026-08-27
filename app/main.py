@@ -802,6 +802,30 @@ def delete_notice(notice_id: int):
     return {"ok": True}
 
 
+@app.get("/api/rankings/gyms")
+def rank_gyms(period: str = "quarter"):
+    start, end = period_range(period)
+    sql = """
+        SELECT g.id, g.name AS gym_name, c.name AS chain_name,
+               COUNT(*) AS visits,
+               COUNT(DISTINCT r.event_id) AS event_count,
+               COUNT(DISTINCT r.member_id) AS member_count
+        FROM rsvps r
+        JOIN members m ON m.id = r.member_id
+        JOIN events e ON e.id = r.event_id
+        JOIN gyms g ON g.id = e.gym_id
+        JOIN chains c ON c.id = g.chain_id
+        WHERE r.status='join' AND m.no_rank = 0
+    """
+    params = []
+    if start and end:
+        sql += " AND e.event_date BETWEEN ? AND ?"
+        params.extend([start, end])
+    sql += " GROUP BY g.id ORDER BY visits DESC, event_count DESC, c.name, g.name LIMIT 20"
+    conn = get_conn()
+    return {"rows": [dict(r) for r in conn.execute(sql, params)]}
+
+
 def _period_params(period: str):
     s, e = period_range(period)
     if s and e:

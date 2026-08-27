@@ -351,6 +351,20 @@ function rankListHtml(rows, valKey) {
   }).join("");
 }
 
+function gymRankListHtml(rows) {
+  if (!rows.length) return '<li><span class="empty-note">참가자로 표시된 일정이 없습니다</span></li>';
+  const topVisits = rows[0].visits;
+  return rows.map((r, i) => {
+    const isTop = r.visits === topVisits;
+    const cls = isTop ? "r1" : i === 1 ? "r2" : i === 2 ? "r3" : "";
+    const crown = isTop ? " 👑" : "";
+    return `<li><span class="rank-num ${cls}">${i + 1}</span>
+      <span class="name"><b>${esc(r.chain_name)} ${esc(r.gym_name)}</b><br>
+        <small class="sub">${r.event_count}개 일정 · ${r.member_count}명 참여</small>${crown}</span>
+      <span class="val">${r.visits}회</span></li>`;
+  }).join("");
+}
+
 function updateQuarterLabel() {
   const el = document.getElementById("quarter-label");
   if (!el) return;
@@ -377,6 +391,8 @@ async function loadRankings() {
         const crown = isTop ? ' 👑' : '';
         return `<li><span class="rank-num ${cls}">${i + 1}</span><span class="name">${esc(r.name)}${crown}</span><span class="val">${r.cnt}회</span></li>`;
       }).join("") : '<li><span class="empty-note">데이터 없음</span></li>';
+    const gymRanks = await api(`/api/rankings/gyms?period=${rankPeriod}`);
+    document.getElementById("rank-gym-list").innerHTML = gymRankListHtml(gymRanks.rows);
     await renderGradeTable();
   } catch (e) {}
 }
@@ -858,7 +874,7 @@ function pickMember(id, el) {
 async function loadBanner() {
   try {
     const data = await api("/api/banner");
-    const dismissed = localStorage.getItem("bannerDismissed");
+    const dismissed = sessionStorage.getItem("bannerDismissed");
     if (data.enabled && data.text && dismissed !== data.text) {
       document.getElementById("banner-text").textContent = data.text;
       document.getElementById("global-banner").style.display = "flex";
@@ -874,7 +890,7 @@ async function loadBanner() {
 
 function dismissBanner() {
   const text = document.getElementById("banner-text").textContent;
-  localStorage.setItem("bannerDismissed", text);
+  sessionStorage.setItem("bannerDismissed", text);
   document.getElementById("global-banner").style.display = "none";
 }
 
@@ -884,7 +900,10 @@ async function saveBanner() {
   if (enabled && !text) { alert("문구를 입력하세요"); return; }
   try {
     await adminApi("/api/banner", { method: "PUT", body: JSON.stringify({ text, enabled }) });
-    if (enabled) localStorage.removeItem("bannerDismissed");
+    if (enabled) {
+      localStorage.removeItem("bannerDismissed");
+      sessionStorage.removeItem("bannerDismissed");
+    }
     alert("배너가 저장되었습니다");
     await loadBanner();
   } catch (e) { alert(e.message); }

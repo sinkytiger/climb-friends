@@ -6,7 +6,7 @@
 <title>클라임 프렌즈 대시보드</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="/static/style.css?v=20260827z">
+<link rel="stylesheet" href="/static/style.css?v=20260827z4">
 </head>
 <body>
 
@@ -29,14 +29,14 @@
   </div>
 </header>
 
-<div id="global-banner" class="banner" style="display:none">
-  <span id="banner-text"></span>
-  <button class="banner-close" onclick="dismissBanner()" title="닫기">&#10005;</button>
-</div>
-
 <div id="major-notice-banner" class="major-notice-banner" style="display:none" onclick="openCurrentMajorNotice()">
   <span class="major-label">주요 공지</span>
   <span id="major-notice-title"></span>
+</div>
+
+<div id="global-banner" class="banner" style="display:none">
+  <span id="banner-text"></span>
+  <button class="banner-close" onclick="dismissBanner()" title="닫기">&#10005;</button>
 </div>
 
 <main>
@@ -102,6 +102,10 @@
         <h3>일정 참여 랭킹 <small>RSVP 기준</small></h3>
         <ol id="rank-att-list"></ol>
       </div>
+    </div>
+    <div class="card">
+      <h3>자주 가는 암장 랭킹 <small>참가자로 표시한 일정 기준</small></h3>
+      <ol id="rank-gym-list"></ol>
     </div>
     <div class="card">
       <h3>그레이드별 클리어 랭킹 <small>어려운 등급부터 비교</small></h3>
@@ -407,6 +411,6 @@
   <button data-tab="admin" class="admin-only">관리</button>
 </nav>
 
-<script src="/static/app.js?v=20260827z"></script>
+<script src="/static/app.js?v=20260827z4"></script>
 </body>
 </html>
