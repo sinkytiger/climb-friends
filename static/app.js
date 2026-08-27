@@ -13,6 +13,11 @@ let currentDetailId = null;
 let selectedChainIdx = 0;
 let rankPeriod = "quarter";
 let adminLoaded = false;
+let notices = [];
+let majorNotices = [];
+let majorNoticeIndex = 0;
+let majorNoticeTimer = null;
+let editingNoticeId = null;
 
 const CHAIN_CLASS = {
   "더클라임": "c-climb", "서울숲": "c-seoul", "클라이밍파크": "c-park",
@@ -80,6 +85,148 @@ async function refreshMembers() {
 
 function openModal(id) { document.getElementById(id).classList.add("open"); }
 function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+
+/* ---------- 알림장 ---------- */
+async function loadNotices() {
+  try {
+    const data = await api("/api/notices");
+    notices = data.notices || [];
+    renderNoticeList();
+    renderNoticeAdminList();
+  } catch (e) {
+    notices = [];
+    renderNoticeList();
+  }
+  try {
+    const data = await api("/api/notices/major");
+    majorNotices = data.notices || [];
+    majorNoticeIndex = 0;
+    renderMajorNotice();
+    if (majorNoticeTimer) clearInterval(majorNoticeTimer);
+    if (majorNotices.length > 1) {
+      majorNoticeTimer = setInterval(() => {
+        majorNoticeIndex = (majorNoticeIndex + 1) % majorNotices.length;
+        renderMajorNotice();
+      }, 6000);
+    }
+  } catch (e) {
+    majorNotices = [];
+    renderMajorNotice();
+  }
+}
+
+function renderNoticeList() {
+  const el = document.getElementById("notice-list");
+  if (!el) return;
+  if (!notices.length) {
+    el.innerHTML = '<div class="card"><div class="empty-note">등록된 공지가 없습니다</div></div>';
+    return;
+  }
+  el.innerHTML = notices.map(n => `
+    <button class="notice-item" onclick="openNotice(${n.id})">
+      ${n.is_major ? '<span class="notice-major-badge">주요 공지</span>' : ''}
+      <span class="notice-title">${esc(n.title)}</span>
+      <span class="notice-date">${esc(String(n.created_at || '').slice(0, 10))}</span>
+    </button>`).join("");
+}
+
+function renderMajorNotice() {
+  const banner = document.getElementById("major-notice-banner");
+  const title = document.getElementById("major-notice-title");
+  if (!banner || !title) return;
+  if (!majorNotices.length) {
+    banner.style.display = "none";
+    return;
+  }
+  const notice = majorNotices[majorNoticeIndex];
+  title.textContent = notice.title;
+  banner.style.display = "flex";
+}
+
+function openCurrentMajorNotice() {
+  if (majorNotices[majorNoticeIndex]) openNotice(majorNotices[majorNoticeIndex].id);
+}
+
+async function openNotice(id) {
+  try {
+    const data = await api(`/api/notices/${id}`);
+    const n = data.notice;
+    document.getElementById("notice-modal-title").textContent = n.title;
+    document.getElementById("notice-modal-date").textContent =
+      `${n.is_major ? "주요 공지 · " : ""}${String(n.created_at || "").slice(0, 16)}`;
+    document.getElementById("notice-modal-content").textContent = n.content;
+    openModal("modal-notice");
+  } catch (e) { alert(e.message); }
+}
+
+function renderNoticeAdminList() {
+  const el = document.getElementById("notice-admin-list");
+  if (!el) return;
+  if (!notices.length) {
+    el.innerHTML = '<div class="empty-note">등록된 공지가 없습니다</div>';
+    return;
+  }
+  el.innerHTML = notices.map(n => `
+    <div class="notice-admin-row">
+      ${n.is_major ? '<span class="notice-major-badge">주요</span>' : ''}
+      <span class="notice-admin-title">${esc(n.title)}</span>
+      <span class="notice-admin-actions">
+        <button class="btn-mini" onclick="editNotice(${n.id})">수정</button>
+        <button class="btn-mini del" onclick="deleteNotice(${n.id})">삭제</button>
+      </span>
+    </div>`).join("");
+}
+
+function resetNoticeForm() {
+  editingNoticeId = null;
+  document.getElementById("notice-title-input").value = "";
+  document.getElementById("notice-content-input").value = "";
+  document.getElementById("notice-major-input").checked = false;
+  document.getElementById("notice-save-btn").textContent = "공지 저장";
+  document.getElementById("notice-cancel-btn").style.display = "none";
+}
+
+async function editNotice(id) {
+  try {
+    const data = await api(`/api/notices/${id}`);
+    const n = data.notice;
+    editingNoticeId = id;
+    document.getElementById("notice-title-input").value = n.title;
+    document.getElementById("notice-content-input").value = n.content;
+    document.getElementById("notice-major-input").checked = !!n.is_major;
+    document.getElementById("notice-save-btn").textContent = "공지 수정";
+    document.getElementById("notice-cancel-btn").style.display = "block";
+    document.getElementById("notice-title-input").focus();
+  } catch (e) { alert(e.message); }
+}
+
+async function saveNotice() {
+  const payload = {
+    title: document.getElementById("notice-title-input").value.trim(),
+    content: document.getElementById("notice-content-input").value.trim(),
+    is_major: document.getElementById("notice-major-input").checked
+  };
+  if (!payload.title || !payload.content) { alert("제목과 내용을 모두 입력하세요"); return; }
+  try {
+    if (editingNoticeId) {
+      await adminApi(`/api/notices/${editingNoticeId}`, { method: "PUT", body: JSON.stringify(payload) });
+    } else {
+      await adminApi("/api/notices", { method: "POST", body: JSON.stringify(payload) });
+    }
+    resetNoticeForm();
+    await loadNotices();
+    alert("공지가 저장되었습니다");
+  } catch (e) { alert(e.message); }
+}
+
+async function deleteNotice(id) {
+  if (!confirm("이 공지를 삭제할까요?")) return;
+  try {
+    await adminApi(`/api/notices/${id}`, { method: "DELETE" });
+    if (editingNoticeId === id) resetNoticeForm();
+    await loadNotices();
+  } catch (e) { alert(e.message); }
+}
 
 /* ---------- 달력 ---------- */
 let _monthEvents = [];
@@ -1108,6 +1255,8 @@ async function init() {
   document.getElementById("save-event-btn").addEventListener("click", saveEvent);
   document.getElementById("clear-submit").addEventListener("click", submitClear);
   document.getElementById("member-add-btn").addEventListener("click", addMember);
+  document.getElementById("notice-save-btn").addEventListener("click", saveNotice);
+  document.getElementById("notice-cancel-btn").addEventListener("click", resetNoticeForm);
 
   BOOT = await api("/api/bootstrap");
   const now = new Date();
@@ -1115,6 +1264,7 @@ async function init() {
   calM = now.getMonth() + 1;
 
   await loadRestaurants();
+  await loadNotices();
   renderChainChips();
   fillEventFormSelects();
   setupMemberSearch();

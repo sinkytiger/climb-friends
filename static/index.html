@@ -6,7 +6,7 @@
 <title>클라임 프렌즈 대시보드</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="/static/style.css?v=20260827x">
+<link rel="stylesheet" href="/static/style.css?v=20260827z">
 </head>
 <body>
 
@@ -21,6 +21,7 @@
     <button data-tab="calendar" class="active">달력</button>
     <button data-tab="ranking">랭킹</button>
     <button data-tab="food">맛집</button>
+    <button data-tab="notices">알림장</button>
     <button data-tab="admin" class="admin-only">관리</button>
   </nav>
   <div class="user">
@@ -31,6 +32,11 @@
 <div id="global-banner" class="banner" style="display:none">
   <span id="banner-text"></span>
   <button class="banner-close" onclick="dismissBanner()" title="닫기">&#10005;</button>
+</div>
+
+<div id="major-notice-banner" class="major-notice-banner" style="display:none" onclick="openCurrentMajorNotice()">
+  <span class="major-label">주요 공지</span>
+  <span id="major-notice-title"></span>
 </div>
 
 <main>
@@ -66,6 +72,16 @@
         </div>
       </aside>
     </div>
+  </section>
+
+  <section id="tab-notices" class="tab">
+    <div class="section-heading">
+      <div>
+        <h2>알림장</h2>
+        <p>클라임 프렌즈의 공지사항을 확인하세요.</p>
+      </div>
+    </div>
+    <div id="notice-list" class="notice-list"></div>
   </section>
 
   <section id="tab-ranking" class="tab">
@@ -260,6 +276,26 @@
         <button class="btn-mini del" onclick="clearBanner()">끄기</button>
       </div>
     </div>
+
+    <div class="card">
+      <h3>알림장 관리 <small>제목을 누르면 멤버가 내용을 확인합니다</small></h3>
+      <div class="form-row">
+        <label>제목</label>
+        <input type="text" id="notice-title-input" placeholder="공지 제목">
+      </div>
+      <div class="form-row">
+        <label>내용</label>
+        <textarea id="notice-content-input" rows="5" placeholder="공지 내용을 입력하세요"></textarea>
+      </div>
+      <label class="notice-major-check">
+        <input type="checkbox" id="notice-major-input"> 주요 공지로 표시
+      </label>
+      <div class="modal-actions">
+        <button class="btn btn-join" id="notice-save-btn">공지 저장</button>
+        <button class="btn btn-out" id="notice-cancel-btn" style="display:none">수정 취소</button>
+      </div>
+      <div id="notice-admin-list" class="notice-admin-list"></div>
+    </div>
   </section>
 </main>
 
@@ -327,6 +363,16 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="modal-notice">
+  <div class="modal notice-modal">
+    <span class="badge c-etc" id="notice-modal-badge">알림장</span>
+    <h3 id="notice-modal-title"></h3>
+    <div class="meta" id="notice-modal-date"></div>
+    <div id="notice-modal-content" class="notice-modal-content"></div>
+    <button class="btn-close" onclick="closeModal('modal-notice')">닫기</button>
+  </div>
+</div>
+
 <footer>
   버그·문의: <a href="https://open.kakao.com/o/sqg0FWgi" target="_blank" rel="noopener">담당자 카톡</a>
   &middot; 클라임 프렌즈 대시보드
@@ -357,9 +403,10 @@
   <button data-tab="calendar" class="active">달력</button>
   <button data-tab="ranking">랭킹</button>
   <button data-tab="food">맛집</button>
+  <button data-tab="notices">알림장</button>
   <button data-tab="admin" class="admin-only">관리</button>
 </nav>
 
-<script src="/static/app.js?v=20260827x"></script>
+<script src="/static/app.js?v=20260827z"></script>
 </body>
 </html>

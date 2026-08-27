@@ -78,6 +78,12 @@ class BannerIn(BaseModel):
     enabled: bool = False
 
 
+class NoticeIn(BaseModel):
+    title: str
+    content: str
+    is_major: bool = False
+
+
 class RestaurantIn(BaseModel):
     gym_id: int
     name: Optional[str] = None
@@ -705,6 +711,93 @@ def set_banner(body: BannerIn):
         " ON CONFLICT(key) DO UPDATE SET value=excluded.value",
         (json.dumps({"text": body.text, "enabled": body.enabled}, ensure_ascii=False),),
     )
+    conn.commit()
+    return {"ok": True}
+
+
+@app.get("/api/notices")
+def list_notices():
+    conn = get_conn()
+    rows = conn.execute(
+        """
+        SELECT id, title, is_major, created_at, updated_at
+        FROM notices
+        ORDER BY is_major DESC, updated_at DESC, id DESC
+        """
+    ).fetchall()
+    return {"notices": [dict(r) for r in rows]}
+
+
+@app.get("/api/notices/major")
+def list_major_notices():
+    conn = get_conn()
+    rows = conn.execute(
+        """
+        SELECT id, title, content, is_major, created_at, updated_at
+        FROM notices
+        WHERE is_major = 1
+        ORDER BY updated_at DESC, id DESC
+        """
+    ).fetchall()
+    return {"notices": [dict(r) for r in rows]}
+
+
+@app.get("/api/notices/{notice_id}")
+def notice_detail(notice_id: int):
+    conn = get_conn()
+    row = conn.execute(
+        """
+        SELECT id, title, content, is_major, created_at, updated_at
+        FROM notices
+        WHERE id=?
+        """,
+        (notice_id,),
+    ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="공지를 찾을 수 없습니다")
+    return {"notice": dict(row)}
+
+
+def _notice_values(body: NoticeIn):
+    title = body.title.strip()
+    content = body.content.strip()
+    if not title:
+        raise HTTPException(status_code=400, detail="공지 제목을 입력하세요")
+    if not content:
+        raise HTTPException(status_code=400, detail="공지 내용을 입력하세요")
+    return title, content, 1 if body.is_major else 0
+
+
+@app.post("/api/notices", dependencies=[Depends(check_admin)])
+def create_notice(body: NoticeIn):
+    title, content, is_major = _notice_values(body)
+    conn = get_conn()
+    cur = conn.execute(
+        "INSERT INTO notices(title, content, is_major, updated_at) VALUES (?, ?, ?, datetime('now', 'localtime'))",
+        (title, content, is_major),
+    )
+    conn.commit()
+    return {"id": cur.lastrowid}
+
+
+@app.put("/api/notices/{notice_id}", dependencies=[Depends(check_admin)])
+def update_notice(notice_id: int, body: NoticeIn):
+    title, content, is_major = _notice_values(body)
+    conn = get_conn()
+    if not conn.execute("SELECT 1 FROM notices WHERE id=?", (notice_id,)).fetchone():
+        raise HTTPException(status_code=404, detail="공지를 찾을 수 없습니다")
+    conn.execute(
+        "UPDATE notices SET title=?, content=?, is_major=?, updated_at=datetime('now', 'localtime') WHERE id=?",
+        (title, content, is_major, notice_id),
+    )
+    conn.commit()
+    return {"ok": True}
+
+
+@app.delete("/api/notices/{notice_id}", dependencies=[Depends(check_admin)])
+def delete_notice(notice_id: int):
+    conn = get_conn()
+    conn.execute("DELETE FROM notices WHERE id=?", (notice_id,))
     conn.commit()
     return {"ok": True}
 
