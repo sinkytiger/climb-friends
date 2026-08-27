@@ -66,6 +66,15 @@ main { max-width: 1240px; margin: 0 auto; padding: 24px 20px; }
 .crew-card li:last-child { border-bottom: none; }
 .crew-card li span { width: 22px; text-align: center; }
 .crew-card p { color: #9ca3af; font-size: 11px; margin-top: 10px; line-height: 1.5; }
+.discount-card h3 { color: #9a3412; }
+.discount-card ul { list-style: none; }
+.discount-card li {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 7px 0; border-bottom: 1px solid #fff7ed; font-size: 12px;
+}
+.discount-card li:last-child { border-bottom: none; }
+.discount-card li b { color: #374151; }
+.discount-card li span { color: #9a3412; line-height: 1.45; }
 .cal-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
 .cal-head h2 { font-size: 20px; }
 .nav-btn {
