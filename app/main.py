@@ -233,6 +233,15 @@ def all_events(limit: int = 100):
     return {"events": [dict(r) for r in rows]}
 
 
+@app.get("/api/events/{event_id}/rsvps")
+def list_rsvps(event_id: int):
+    conn = get_conn()
+    if not conn.execute("SELECT 1 FROM events WHERE id=?", (event_id,)).fetchone():
+        raise HTTPException(status_code=404, detail="일정을 찾을 수 없습니다")
+    rows = conn.execute("SELECT member_id, status FROM rsvps WHERE event_id=?", (event_id,)).fetchall()
+    return {"rsvps": [dict(r) for r in rows]}
+
+
 @app.get("/api/events/{event_id}")
 def event_detail(event_id: int):
     conn = get_conn()
