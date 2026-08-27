@@ -82,9 +82,11 @@ function openModal(id) { document.getElementById(id).classList.add("open"); }
 function closeModal(id) { document.getElementById(id).classList.remove("open"); }
 
 /* ---------- 달력 ---------- */
+let _monthEvents = [];
 async function loadMonth() {
   document.getElementById("month-label").textContent = `${calY}년 ${calM}월`;
   const data = await api(`/api/events?year=${calY}&month=${calM}`);
+  _monthEvents = data.events;
   renderCalendar(data.events);
   renderUpcomingSide();
 }
@@ -107,12 +109,32 @@ function renderCalendar(events) {
   for (let d = 1; d <= days; d++) {
     const bdays = BOOT.members.filter(m => m.birth_date && m.birth_date.slice(5) === `${pad(calM)}-${pad(d)}`);
     const bdayChips = bdays.map(m => `<span class="chip chip-bday">🎂 ${esc(m.name)}</span>`).join("");
-    const chips = (byDay[d] || []).map(e =>
-      `<button class="chip ${chainCls(e.chain_name)}" onclick="openDetail(${e.id})">${esc(e.start_time)} ${esc(e.title || e.gym_name)}</button>`
+    const dayEvents = byDay[d] || [];
+    const visible = dayEvents.slice(0, 2);
+    const hidden = dayEvents.length - visible.length;
+    const chips = visible.map(e =>
+      `<button class="chip ${chainCls(e.chain_name)}" onclick="event.stopPropagation(); openDetail(${e.id})">${esc(e.start_time)} ${esc(e.title || e.gym_name)}</button>`
     ).join("");
-    html += `<div class="day ${d === todayD ? "today" : ""}"><div class="num">${d}</div>${chips}${bdayChips}</div>`;
+    const more = hidden > 0 ? `<button class="chip" style="background:#f3f4f6;color:#374151;border:1px dashed #d1d5db" onclick="event.stopPropagation(); openDayModal(${d})">+${hidden}개 더보기</button>` : "";
+    html += `<div class="day ${d === todayD ? "today" : ""}" onclick="openDayModal(${d})"><div class="num">${d}</div>${chips}${more}${bdayChips}</div>`;
   }
   grid.innerHTML = html;
+}
+
+function openDayModal(day) {
+  const list = (_monthEvents || []).filter(e => Number(e.event_date.slice(8, 10)) === day);
+  document.getElementById("day-modal-title").textContent = `${calY}년 ${calM}월 ${day}일 일정 (${list.length}건)`;
+  const el = document.getElementById("day-modal-list");
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-note">등록된 일정이 없습니다</div>';
+  } else {
+    el.innerHTML = list.map(e => `
+      <div style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer" onclick="closeModal('modal-day'); openDetail(${e.id})">
+        <div style="font-weight:bold">${esc(e.title || e.gym_name)} <span class="badge ${chainCls(e.chain_name)}" style="margin-left:6px">${esc(e.chain_name)}</span></div>
+        <div style="font-size:13px;color:#6b7280;margin-top:4px">${esc(e.start_time)} · ${esc(e.gym_name)}${e.memo ? ` · ${esc(e.memo)}` : ""} · 👥 ${e.attendees}명</div>
+      </div>`).join("");
+  }
+  openModal("modal-day");
 }
 
 async function renderUpcomingSide() {
